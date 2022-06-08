@@ -1,0 +1,11 @@
+CLEARDB_DATABASE_URL: mysql://b35ff266415632:cbfe3b87@us-cdbr-east-05.cleardb.net/heroku_84ddc0cfa6f239f?reconnect=true
+{
+  "type": "mysql",
+  "host": "us-cdbr-east-05.cleardb.net",
+  "port": 3306,
+  "username": "b35ff266415632",
+  "password": "cbfe3b87",
+  "database": "heroku_84ddc0cfa6f239f",
+  "entities": ["dist/**/*.entity{.ts,.js}"],
+  "synchronize": true
+}

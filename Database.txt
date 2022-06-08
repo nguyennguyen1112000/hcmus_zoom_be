@@ -1,0 +1,12 @@
+mysql://b0f0200f9c08d9:20f609f0@us-cdbr-east-05.cleardb.net/heroku_8a8756ba87a68df?reconnect=true
+
+{
+  "type": "mysql",
+  "host": "localhost",
+  "port": 3306,
+  "username": "root",
+  "password": "123456",
+  "database": "zoom_proctoring",
+  "entities": ["dist/**/*.entity{.ts,.js}"],
+  "synchronize": true
+}
