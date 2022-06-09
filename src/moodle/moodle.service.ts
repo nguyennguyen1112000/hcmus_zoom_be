@@ -14,7 +14,6 @@ import { UserRole } from 'src/users/decorator/user.enum';
 import { UsersService } from 'src/users/users.service';
 import { CreateConnectDto } from './dto/create-connect.dto';
 import { Connection } from 'typeorm';
-import { stdout } from 'process';
 @Injectable()
 export class MoodlesService {
   constructor(
@@ -28,28 +27,25 @@ export class MoodlesService {
   async connect(user: any, createConnectDto: CreateConnectDto) {
     try {
       const { moodleUsername, moodlePassword } = createConnectDto;
-      const url =
-        'https://courses.fit.hcmus.edu.vn/login/token.php?service=moodle_mobile_app';
+      const url = `https://courses.fit.hcmus.edu.vn/login/token.php?service=moodle_mobile_app&username=${moodleUsername}&password=${moodlePassword}`;
 
-      const response = await this.httpService
-        .post(url, { username: moodleUsername, password: moodlePassword })
-        .toPromise();
-      if (response.data) {
-        if (user.role == UserRole.ADMIN || user.role == UserRole.PROCTOR)
-          return await this.usersService.updateMoodleAccount(
-            user.id,
-            moodleUsername,
-            moodlePassword,
-          );
-        else if (user.role == UserRole.STUDENT)
-          return await this.studentsService.updateMoodleAccount(
-            user.studentId,
-            moodleUsername,
-            moodlePassword,
-          );
-      }
+      const response = await this.httpService.post(url).toPromise();
+      if (response.data.token) {
+        const { userid } = await this.getUserInfo(response.data.token);
+        return await this.usersService.updateMoodleAccount(
+          user.id,
+          userid,
+          moodleUsername,
+          moodlePassword,
+        );
+        // } else if (user.role == UserRole.STUDENT)
+        //   return await this.studentsService.updateMoodleAccount(
+        //     user.studentId,
+        //     moodleUsername,
+        //     moodlePassword,
+        //   );
+      } else throw new BadRequestException('Username or password is invalid');
     } catch (error) {
-      console.log(error.message);
       throw error;
     }
   }

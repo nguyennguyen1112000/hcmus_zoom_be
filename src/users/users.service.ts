@@ -19,6 +19,8 @@ import { assignPartialsToThis, generateProctorCode } from 'src/helpers/ultils';
 import { Connection } from 'typeorm';
 import * as reader from 'xlsx';
 import * as fs from 'fs';
+import { CreateProctorDto } from './dto/create-proctor.dto';
+import { UpdateProctorDto } from './dto/update-proctor.dto';
 @Injectable()
 export class UsersService {
   constructor(
@@ -76,12 +78,18 @@ export class UsersService {
     return await this.usersRepository.findOne({ where: condition });
   }
 
-  async updateMoodleAccount(id: number, username: string, password: string) {
+  async updateMoodleAccount(
+    id: number,
+    moodleId: string,
+    username: string,
+    password: string,
+  ) {
     try {
       const user = await this.usersRepository.findOne(id);
       if (!user) throw new NotFoundException(`User not found. Id = ${id}`);
       user.moodleUsername = username;
       user.moodlePassword = password;
+      user.moodleId = moodleId;
       return await this.usersRepository.save(user);
     } catch (error) {
       throw error;
@@ -105,6 +113,42 @@ export class UsersService {
       return true;
     } catch (err) {
       throw new BadRequestException(err.message);
+    }
+  }
+
+  async addProctor(createProctorDto: CreateProctorDto) {
+    try {
+      const user = await this.usersRepository.findOne({
+        where: { email: createProctorDto.email },
+      });
+      if (!user) {
+        const newUser = new User();
+        assignPartialsToThis(newUser, createProctorDto);
+        newUser.role = UserRole.PROCTOR;
+        newUser.status = UserStatus.PENDING;
+        return await this.usersRepository.save(newUser);
+      } else {
+        user.role = UserRole.PROCTOR;
+        return await this.usersRepository.save(user);
+      }
+    } catch (err) {
+      throw err;
+    }
+  }
+
+  async updateProctor(id: number, updateProctorDto: UpdateProctorDto) {
+    try {
+      const user = await this.usersRepository.findOne(id, {
+        where: { role: UserRole.PROCTOR },
+      });
+      if (!user) {
+        throw new NotFoundException('Not found proctor');
+      } else {
+        assignPartialsToThis(user, updateProctorDto);
+        return await this.usersRepository.save(user);
+      }
+    } catch (err) {
+      throw err;
     }
   }
 

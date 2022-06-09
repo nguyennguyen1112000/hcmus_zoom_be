@@ -52,6 +52,9 @@ export class User {
   zoomId: string;
 
   @Column({ nullable: true })
+  moodleId: string;
+
+  @Column({ nullable: true })
   moodleUsername: string;
 
   @Column({ nullable: true })

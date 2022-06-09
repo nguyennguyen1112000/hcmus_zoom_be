@@ -6,6 +6,8 @@ import { MoodlesService } from './moodle.service';
 import { GetUser } from 'src/users/decorator/user.decorator';
 import { CreateConnectDto } from './dto/create-connect.dto';
 import { UsersService } from 'src/users/users.service';
+import { Roles } from 'src/auth/decorator/roles.decorator';
+import { UserRole } from 'src/users/decorator/user.enum';
 
 @ApiTags('moodles')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -16,6 +18,7 @@ export class MoodleController {
     private readonly moodlesService: MoodlesService,
     private usersService: UsersService,
   ) {}
+  @Roles(UserRole.ADMIN)
   @Post('connect')
   async connectMoodle(
     @GetUser() user,
