@@ -12,6 +12,8 @@ import * as FormData from 'form-data';
 import * as request from 'request';
 import { ConfigurationService } from 'src/config/configuration.service';
 import * as fs from 'fs';
+import { Student } from 'src/student/entities/student.entity';
+import { ImageType } from 'src/image/decorator/image-type.enum';
 @Injectable()
 export class EkycsService {
   constructor(
@@ -60,7 +62,7 @@ export class EkycsService {
             },
           },
           function (error, response, body) {
-            if (body) resolve(body);
+            if (body) resolve(JSON.parse(body));
           },
         );
       });
@@ -73,62 +75,83 @@ export class EkycsService {
     try {
       const config = await this.configService.getDefault();
       const url = process.env.EKYC_API;
-      const checkVal = await this.checkVal(file, config.ekycToken);
+      const predictStudentID = await this.predictStudentId(file);
+      let isStudentID = false;
+      if (predictStudentID.predicts) {
+        if (predictStudentID.predicts.length > 0)
+          if (predictStudentID.predicts[0].conf > 0.8) isStudentID = true;
+      }
 
-      if (checkVal.predicts) {
-        if (checkVal.photocopy && checkVal.photocopy == 6)
-          throw new BadRequestException(
-            'Photo taken is a photocopy, taken via screen',
-          );
-        if (checkVal.iluminate) {
-          switch (checkVal.iluminatie) {
-            case 3:
-              throw new BadRequestException('The photo is too bright');
-            case 4:
-              throw new BadRequestException('The photo is too dark');
-            case 5:
-              throw new BadRequestException('The photo is too blurred');
+      if (!isStudentID) {
+        const checkVal = await this.checkVal(file, config.ekycToken);
+
+        if (checkVal.predicts) {
+          if (checkVal.photocopy && checkVal.photocopy == 6)
+            throw new BadRequestException(
+              'Photo taken is a photocopy, taken via screen',
+            );
+          if (checkVal.iluminate) {
+            switch (checkVal.iluminatie) {
+              case 3:
+                throw new BadRequestException('The photo is too bright');
+              case 4:
+                throw new BadRequestException('The photo is too dark');
+              case 5:
+                throw new BadRequestException('The photo is too blurred');
+              default:
+                break;
+            }
+          }
+          if (checkVal.face && checkVal.face == 7)
+            throw new BadRequestException('No face found');
+        }
+        const fileType = await this.classify(file, config.ekycToken);
+        let type = -1;
+        if (fileType.predicts) {
+          switch (fileType?.predicts) {
+            case 'front_cmtnd':
+              type = 1;
+              break;
+            case 'front_cccd':
+              type = 3;
+              break;
             default:
               break;
           }
         }
-        if (checkVal.face && checkVal.face == 7)
-          throw new BadRequestException('No face found');
-      }
-      const fileType = await this.classify(file, config.ekycToken);
-      let type = -1;
-      if (fileType.predicts) {
-        switch (fileType?.predicts) {
-          case 'front_cmtnd':
-            type = 1;
-            break;
-          case 'front_cccd':
-            type = 3;
-            break;
-          default:
-            break;
-        }
-      }
+        if (type == -1)
+          throw new BadRequestException(
+            'Unable to determine verification document type',
+          );
 
-      return new Promise((resolve, reject) => {
-        request.post(
-          {
-            url: `${url}/doc/crop_extract`,
-            headers: {
-              Authorization: `Bearer ${config.ekycToken}`,
-              'Content-Type': 'application/json',
-              Accept: 'application/json',
+        return new Promise((resolve, reject) => {
+          request.post(
+            {
+              url: `${url}/doc/crop_extract`,
+              headers: {
+                Authorization: `Bearer ${config.ekycToken}`,
+                'Content-Type': 'application/json',
+                Accept: 'application/json',
+              },
+              formData: {
+                binary_file: fs.createReadStream(file.path),
+                doc_type: type,
+              },
             },
-            formData: {
-              binary_file: fs.createReadStream(file.path),
-              doc_type: type,
+            function (error, response, body) {
+              resolve({ ...JSON.parse(body), type: ImageType.ID_CARD });
             },
-          },
-          function (error, response, body) {
-            resolve(body);
-          },
-        );
-      });
+          );
+        });
+      } else {
+        const checkValFace = await this.checkValFace(file, config.ekycToken);
+
+        if (checkValFace.predicts) {
+          if (checkValFace.face && checkValFace.face == 7)
+            throw new BadRequestException('No face found');
+        }
+        return await this.extractStudentId(file);
+      }
     } catch (error) {
       throw error;
     }
@@ -155,6 +178,85 @@ export class EkycsService {
           },
           function (error, response, body) {
             resolve(body);
+          },
+        );
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async checkValFace(file: any, token): Promise<any> {
+    try {
+      const url = process.env.EKYC_API;
+
+      return new Promise((resolve, reject) => {
+        request.post(
+          {
+            url: `${url}/doc/checkval`,
+            headers: {
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'application/json',
+              Accept: 'application/json',
+            },
+            formData: {
+              binary_file: fs.createReadStream(file.path),
+              options: ['face'],
+            },
+            json: true,
+          },
+          function (error, response, body) {
+            resolve(body);
+          },
+        );
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async predictStudentId(file: any): Promise<any> {
+    try {
+      return new Promise((resolve, reject) => {
+        request.post(
+          {
+            url: 'https://aiclub.uit.edu.vn/gpu/service/thesv/field/predict_binary',
+            headers: {
+              'Content-Type': 'application/json',
+              Accept: 'application/json',
+            },
+            formData: {
+              binary_file: fs.createReadStream(file.path),
+            },
+            json: true,
+          },
+          function (error, response, body) {
+            resolve(body);
+          },
+        );
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async extractStudentId(file: any): Promise<any> {
+    try {
+      return new Promise((resolve, reject) => {
+        request.post(
+          {
+            url: 'https://aiclub.uit.edu.vn/student_idcard/predict_binary',
+            headers: {
+              'Content-Type': 'application/json',
+              Accept: 'application/json',
+            },
+            formData: {
+              binary_file: fs.createReadStream(file.path),
+            },
+            json: true,
+          },
+          function (error, response, body) {
+            resolve({ ...body, type: ImageType.STUDENT_CARD });
           },
         );
       });

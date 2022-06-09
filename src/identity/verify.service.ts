@@ -105,41 +105,93 @@ export class VerifyService {
   async verifyId(file: any, user: any, recordId: string) {
     try {
       const student = await this.studentService.findOne(user.studentId);
-
+      let imageType = ImageType.OTHERS;
       const extractData = await this.ekycService.extractor(file);
-
+      console.log(extractData);
       let check = true;
-      if (extractData.predicts) {
-        if (extractData.predicts[0]) {
-          if (!student.birthday)
-            throw new BadRequestException(
-              'Not found your birthday information in our system. Please contact your proctor!',
-            );
-          if (extractData.predicts[0].dob != formatDate(student.birthday))
-            check = false;
-          if (!student.firstName || !student.lastName)
-            throw new BadRequestException(
-              'Not found your name information in our system. Please contact your proctor!',
-            );
-          const name1 = extractData.predicts[0].name.toLowerCase();
-          const name2 = (
-            student.firstName +
-            ' ' +
-            student.lastName
-          ).toLowerCase();
-          name1.replace(/\s{2,}/g, ' ').trim();
-          name2.replace(/\s{2,}/g, ' ').trim();
-          if (name1 != name2) check = false;
-        }
-      }
+      if (extractData) {
+        if (extractData.type == ImageType.STUDENT_CARD) {
+          imageType = ImageType.STUDENT_CARD;
+          if (extractData.predicts) {
+            if (extractData.predicts.length > 0) {
+              if (extractData.predicts[0].final) {
+                if (!student.firstName || !student.lastName)
+                  throw new BadRequestException(
+                    'Not found your name information in our system. Please contact your proctor!',
+                  );
+                const name1 = extractData.predicts[0].final.name.toLowerCase();
+                const name2 = (
+                  student.firstName +
+                  ' ' +
+                  student.lastName
+                ).toLowerCase();
+                //console.log(name1, name2);
 
+                name1.replace(/\s{2,}/g, ' ').trim();
+                name2.replace(/\s{2,}/g, ' ').trim();
+                if (name1 != name2) check = false;
+                if (!student.birthday)
+                  throw new BadRequestException(
+                    'Not found your birthday information in our system. Please contact your proctor!',
+                  );
+                if (
+                  extractData.predicts[0].final.dob !=
+                  formatDate(student.birthday)
+                )
+                  check = false;
+                // console.log(
+                //   extractData.predicts[0].final.dob,
+                //   formatDate(student.birthday),
+                // );
+
+                if (student.studentId != extractData.predicts[0].final.id_num)
+                  check = false;
+                // console.log(
+                //   student.studentId,
+                //   extractData.predicts[0].final.id_num,
+                // );
+              }
+            } else check = false;
+          } else check = false;
+        } else if (extractData.type == ImageType.ID_CARD) {
+          imageType = ImageType.ID_CARD;
+          if (extractData.predicts) {
+            if (extractData.predicts.length > 0) {
+              if (!student.birthday)
+                throw new BadRequestException(
+                  'Not found your birthday information in our system. Please contact your proctor!',
+                );
+              if (extractData.predicts[0].dob != formatDate(student.birthday))
+                check = false;
+              // console.log(
+              //   extractData.predicts[0].dob,
+              //   formatDate(student.birthday),
+              // );
+              if (!student.firstName || !student.lastName)
+                throw new BadRequestException(
+                  'Not found your name information in our system. Please contact your proctor!',
+                );
+              const name1 = extractData.predicts[0].name.toLowerCase();
+              const name2 = (
+                student.firstName +
+                ' ' +
+                student.lastName
+              ).toLowerCase();
+              //console.log(name1, name2);
+              name1.replace(/\s{2,}/g, ' ').trim();
+              name2.replace(/\s{2,}/g, ' ').trim();
+              if (name1 != name2) check = false;
+            } else check = false;
+          } else check = false;
+        } else check = false;
+      }
       const imageResult = await this.imageService.createIdentiyResultImage(
         file,
-        ImageType.ID_CARD,
+        imageType,
       );
-      //console.log(file.path);
-
-      //fs.unlinkSync(file.path);
+      if (fs.existsSync(file.path)) {
+      }
+      fs.unlinkSync(file.path);
 
       return await this.identiyRecordService.updateIDStatus(
         recordId,

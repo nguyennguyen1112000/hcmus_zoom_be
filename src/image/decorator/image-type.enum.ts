@@ -4,4 +4,5 @@ export enum ImageType {
   ID_CARD = 'id_card',
   FACE_DATA = 'face_data',
   FACE_RESULT = 'face_result',
+  OTHERS = 'others',
 }
