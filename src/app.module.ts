@@ -16,6 +16,7 @@ import { AppGateway } from './app.gateway';
 import { MoodlesModule } from './moodle/moodle.module';
 import { EkycModule } from './ekyc/ekyc.module';
 import { ContactModule } from './contact/contact.module';
+import { DeauthorizationModule } from './deauthorization/deauthorization.module';
 @Module({
   imports: [
     // ServeStaticModule.forRoot({
@@ -37,6 +38,7 @@ import { ContactModule } from './contact/contact.module';
     EkycModule,
     ConfigModule,
     ContactModule,
+    DeauthorizationModule,
   ],
   controllers: [AppController],
   providers: [AppService, AppGateway],
