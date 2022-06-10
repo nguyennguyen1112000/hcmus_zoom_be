@@ -8,6 +8,7 @@ import { ZoomsModule } from 'src/zoom/zoom.module';
 import { StudentsModule } from 'src/student/student.module';
 import { UsersModule } from 'src/users/users.module';
 import { IdentityRecordModule } from 'src/identity_record/indetity-record.module';
+import { ConfigurationModule } from 'src/config/configuration.module';
 @Module({
   imports: [
     TypeOrmModule.forFeature([ZoomRoom]),
@@ -15,6 +16,7 @@ import { IdentityRecordModule } from 'src/identity_record/indetity-record.module
     ZoomsModule,
     StudentsModule,
     UsersModule,
+    ConfigurationModule,
     forwardRef(() => IdentityRecordModule),
   ],
   controllers: [RoomsController],

@@ -35,7 +35,7 @@ export class ZoomRoom {
   @Column()
   url: string;
 
-  @Column()
+  @Column({ nullable: true })
   roomCode: string;
 
   @CreateDateColumn({

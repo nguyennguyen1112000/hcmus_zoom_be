@@ -131,8 +131,11 @@ export class RoomsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiBearerAuth('JWT-auth')
   @Post('import/zoom')
-  importZoomRooms(@Body('access_token') access_token: string) {
-    return this.roomsService.importZoomRoom(access_token);
+  @Roles(UserRole.ADMIN)
+  async importZoomRooms(@GetUser() user: any) {
+    const { zoom_access_token } = user;
+    const rooms = await this.roomsService.importZoomRoom(zoom_access_token);
+    return await this.roomsService.createManyFromZoom(rooms);
   }
   @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiBearerAuth('JWT-auth')

@@ -26,6 +26,9 @@ export class Configuration {
   @Column({ type: 'float', nullable: true, default: 0.6 })
   credibility: number;
 
+  @Column({ nullable: true, default: 3 })
+  maxFailAttempt: number;
+
   @CreateDateColumn({
     type: 'timestamp',
     default: () => 'CURRENT_TIMESTAMP(6)',

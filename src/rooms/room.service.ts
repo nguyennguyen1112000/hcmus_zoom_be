@@ -22,6 +22,7 @@ import { CheckInCofigType } from './decorator/config-type.enum';
 import { UsersService } from 'src/users/users.service';
 import { UserRole } from 'src/users/decorator/user.enum';
 import { IdentityRecordService } from 'src/identity_record/identity-record.service';
+import { ConfigurationService } from 'src/config/configuration.service';
 @Injectable()
 export class RoomsService {
   constructor(
@@ -34,6 +35,7 @@ export class RoomsService {
     private usersService: UsersService,
     @Inject(forwardRef(() => IdentityRecordService))
     private recordService: IdentityRecordService,
+    private configService: ConfigurationService,
   ) {}
   async create(createRoomDto: CreateRoomDto) {
     try {
@@ -252,8 +254,18 @@ export class RoomsService {
 
   async update(id: number, updateRoomDto: UpdateRoomDto) {
     try {
-      const room = await this.roomsRepository.findOne(id);
+      const room = await this.roomsRepository.findOne(id, {
+        relations: ['subject'],
+      });
       if (!room) throw new NotFoundException(`Room with id = ${id} not found`);
+      if (updateRoomDto.subjectId) {
+        if (updateRoomDto.subjectId != room.subject.id) {
+          const subject = await this.subjectService.findOne(
+            updateRoomDto.subjectId,
+          );
+          room.subject = subject;
+        }
+      }
       assignPartialsToThis(room, updateRoomDto);
       if (updateRoomDto.checkInConfigType == CheckInCofigType.MANUAL) {
         room.checkInEndTime = null;
@@ -355,8 +367,24 @@ export class RoomsService {
       const verifySuccessCheck = records.some(
         (record) => record.faceStatus && record.idStatus,
       );
+      const config = await this.configService.getDefault();
+      let failExceed = false;
+      if (config && config?.maxFailAttempt) {
+        const failFaceCheck = records.filter(
+          (record) => record.faceStatus == false,
+        ).length;
+        const failIdCheck = records.filter(
+          (record) => record.idStatus == false,
+        ).length;
+        if (config.maxFailAttempt < failFaceCheck + failIdCheck)
+          failExceed = true;
+      }
 
-      return { timeToVerify: check, verifySuccess: verifySuccessCheck };
+      return {
+        timeToVerify: check,
+        verifySuccess: verifySuccessCheck,
+        failExceed,
+      };
     } catch (error) {
       throw error;
     }
@@ -376,6 +404,25 @@ export class RoomsService {
         room.checkInEndTime = null;
       }
       return await this.roomsRepository.save(room);
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async createManyFromZoom(rooms: ZoomRoom[]) {
+    try {
+      for (const room of rooms) {
+        const currentRoom = await this.roomsRepository.findOne({
+          where: { zoomId: room.zoomId },
+        });
+        if (currentRoom) {
+          assignPartialsToThis(currentRoom, room);
+          await this.roomsRepository.save(currentRoom);
+        } else {
+          await this.roomsRepository.save(room);
+        }
+      }
+      return true;
     } catch (error) {
       throw error;
     }

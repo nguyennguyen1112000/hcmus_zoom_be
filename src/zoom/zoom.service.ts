@@ -7,6 +7,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { AuthService } from 'src/auth/auth.service';
+import { ZoomRoom } from 'src/rooms/entities/room.entity';
 
 @Injectable()
 export class ZoomsService {
@@ -66,6 +67,43 @@ export class ZoomsService {
   async getMeetings(accessToken: string) {
     try {
       const url = 'https://api.zoom.us/v2/users/me/meetings';
+      const headersRequest = {
+        Authorization: `Bearer ${accessToken}`,
+      };
+      const response = await this.httpService
+        .get(url, { headers: headersRequest })
+
+        .toPromise();
+      const { meetings } = response.data;
+      let list = [];
+      if (meetings) {
+        for (const meeting of meetings) {
+          const responseMeeting = await this.getOneMeeting(
+            accessToken,
+            meeting.id,
+          );
+          const { id, topic, join_url, password, agenda } = responseMeeting;
+          const room = new ZoomRoom();
+          room.name = topic;
+          room.zoomId = id;
+          room.passcode = password;
+          room.url = join_url;
+          room.description = agenda;
+          list.push(room);
+        }
+      }
+      return list;
+    } catch (error) {
+      if (error.response.status == 401) {
+        throw new UnauthorizedException('Invalid access token');
+      }
+      throw error;
+    }
+  }
+
+  async getOneMeeting(accessToken: string, id: number) {
+    try {
+      const url = `https://api.zoom.us/v2/meetings/${id}`;
       const headersRequest = {
         Authorization: `Bearer ${accessToken}`,
       };

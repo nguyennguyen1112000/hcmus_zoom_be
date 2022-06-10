@@ -6,4 +6,7 @@ export class UpdateConfigurationDto extends PartialType(
 ) {
   @ApiProperty()
   ekycToken: string;
+
+  @ApiProperty()
+  maxFailAttempt: string;
 }
