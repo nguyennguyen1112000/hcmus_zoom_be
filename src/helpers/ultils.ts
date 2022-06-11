@@ -22,6 +22,7 @@ export const generateProctorCode = () => {
 };
 
 export const formatDate = (date) => {
+  date.setTime(date.getTime() + 7 * 60 * 60 * 1000);
   const day = ('0' + date.getDate()).slice(-2);
   const month = ('0' + (date.getMonth() + 1)).slice(-2);
   const year = ('0' + date.getFullYear()).slice(-4);
