@@ -150,6 +150,14 @@ export class VerifyService {
                 //   student.studentId,
                 //   extractData.predicts[0].final.id_num,
                 // );
+                return {
+                  name1,
+                  name2,
+                  studentId1: student.studentId,
+                  studentId2: extractData.predicts[0].final.id_num,
+                  birthday1: extractData.predicts[0].final.dob,
+                  birthday2: formatDate(student.birthday),
+                };
               }
             } else check = false;
           } else check = false;
