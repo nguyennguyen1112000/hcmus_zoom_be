@@ -189,6 +189,12 @@ export class VerifyService {
               name1.replace(/\s{2,}/g, ' ').trim();
               name2.replace(/\s{2,}/g, ' ').trim();
               if (name1 != name2) check = false;
+              return {
+                name1,
+                name2,
+                birthday1: extractData.predicts[0].dob,
+                birthday2: formatDate(student.birthday),
+              };
             } else check = false;
           } else check = false;
         } else check = false;
