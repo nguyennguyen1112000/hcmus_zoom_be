@@ -83,7 +83,9 @@ export class AuthService {
   async loginMoodle(username: string, password: string) {
     const student = await this.moodleService.login(username, password);
     const payload = {
-      ...student,
+      email: student.email,
+      sub: student.id,
+      studentId: student.studentId,
       role: UserRole.STUDENT,
     };
 
