@@ -48,7 +48,7 @@ export class IdentityRecord {
   @Column({ nullable: true })
   roomId?: number;
 
-  @Column('text')
+  @Column('text', { nullable: true })
   note: string;
 
   @Column({ nullable: true })

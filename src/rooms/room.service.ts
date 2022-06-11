@@ -369,6 +369,7 @@ export class RoomsService {
       );
       const config = await this.configService.getDefault();
       let failExceed = false;
+
       if (config && config?.maxFailAttempt) {
         const failFaceCheck = records.filter(
           (record) => record.faceStatus == false,

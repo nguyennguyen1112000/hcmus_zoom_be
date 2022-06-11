@@ -190,8 +190,8 @@ export class VerifyService {
         imageType,
       );
       if (fs.existsSync(file.path)) {
+        fs.unlinkSync(file.path);
       }
-      fs.unlinkSync(file.path);
 
       return await this.identiyRecordService.updateIDStatus(
         recordId,

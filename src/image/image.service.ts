@@ -263,7 +263,8 @@ export class ImagesService {
     const image = await this.imagesRepository.findOne(id);
     if (!image)
       throw new BadRequestException(`Image with id = ${id} not found `);
-    const deleteFile = await googleDriveService.deleteFile(image.imageId);
+    console.log(image.imageId);
+    await googleDriveService.deleteFile(image.imageId);
     return await this.imagesRepository.remove(image);
   }
   async getAllByStudentIds(studentIds: number[]) {

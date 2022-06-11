@@ -239,4 +239,21 @@ export class IdentityRecordService {
       throw error;
     }
   }
+  async deletes(ids: string[]) {
+    try {
+      for (const id of ids) {
+        const record = await this.recordRepository.findOne(id);
+        if (record) {
+          if (record.faceImage)
+            await this.imageService.deleteImage(record.faceImage.id);
+          if (record.cardImage)
+            await this.imageService.deleteImage(record.cardImage.id);
+          await this.recordRepository.remove(record);
+        }
+      }
+      return true;
+    } catch (error) {
+      throw error;
+    }
+  }
 }

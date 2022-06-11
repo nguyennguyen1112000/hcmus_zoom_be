@@ -1,4 +1,12 @@
-import { Controller, Get, UseGuards, Param, Put, Body } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  UseGuards,
+  Param,
+  Put,
+  Body,
+  Delete,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { RolesGuard } from 'src/auth/decorator/roles.guard';
@@ -68,5 +76,12 @@ export class IdentityRecordController {
     @Body('accepted') accepted: boolean,
   ) {
     return this.recordService.updateStatus(roomId, studentId, accepted, note);
+  }
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @ApiBearerAuth('JWT-auth')
+  @Roles(UserRole.ADMIN)
+  @Delete()
+  delete(@Body() ids: string[]) {
+    return this.recordService.deletes(ids);
   }
 }
