@@ -33,10 +33,10 @@ export class IdentityRecordController {
   }
   @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiBearerAuth('JWT-auth')
-  @Roles(UserRole.ADMIN)
+  @Roles(UserRole.ADMIN, UserRole.PROCTOR)
   @Get('room/:id')
-  getOneByRoom(@Param('id') id: number) {
-    return this.recordService.getAllByRoom(id);
+  getOneByRoom(@GetUser() user: any, @Param('id') id: number) {
+    return this.recordService.getAllByRoom(user, id);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -48,15 +48,15 @@ export class IdentityRecordController {
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiBearerAuth('JWT-auth')
-  @Roles(UserRole.ADMIN)
+  @Roles(UserRole.ADMIN, UserRole.PROCTOR)
   @Get()
-  getAll() {
-    return this.recordService.getAll();
+  getAll(@GetUser() user: any) {
+    return this.recordService.getAll(user);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiBearerAuth('JWT-auth')
-  @Roles(UserRole.ADMIN)
+  @Roles(UserRole.ADMIN, UserRole.PROCTOR)
   @Get('room/:id/:studentId')
   getOneByRoomAndStudent(
     @Param('id') id: number,
@@ -67,7 +67,7 @@ export class IdentityRecordController {
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiBearerAuth('JWT-auth')
-  @Roles(UserRole.ADMIN)
+  @Roles(UserRole.ADMIN, UserRole.PROCTOR)
   @Put(':roomId/:studentId')
   updateStatus(
     @Param('roomId') roomId: number,

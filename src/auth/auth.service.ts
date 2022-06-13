@@ -1,4 +1,9 @@
-import { forwardRef, Inject, Injectable } from '@nestjs/common';
+import {
+  forwardRef,
+  Inject,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { UsersService } from '../users/users.service';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
@@ -9,6 +14,7 @@ import { ZoomsService } from 'src/zoom/zoom.service';
 import { StudentsService } from 'src/student/student.service';
 import { UserRole } from 'src/users/decorator/user.enum';
 import { MoodlesService } from 'src/moodle/moodle.service';
+import { HttpService } from '@nestjs/axios';
 @Injectable()
 export class AuthService {
   constructor(
@@ -19,6 +25,7 @@ export class AuthService {
     private zoomsService: ZoomsService,
     private studentService: StudentsService,
     private moodleService: MoodlesService,
+    private httpService: HttpService,
   ) {}
 
   async validateUser(email: string, pass: string): Promise<any> {
@@ -102,5 +109,47 @@ export class AuthService {
       zoom_refresh_token: refreshToken,
     };
     return this.jwtService.sign(payload);
+  }
+
+  async loginWithMicrosoft(accessToken: string) {
+    try {
+      const headersRequest = {
+        Authorization: `Bearer ${accessToken}`,
+      };
+      const response = await this.httpService
+        .get('https://graph.microsoft.com/v1.0/me', { headers: headersRequest })
+        .toPromise();
+      const { mail } = response.data;
+      const admin = await this.usersService.findOne(mail);
+      const student = await this.studentService.findOneWithNoError(
+        mail.split('@')[0],
+      );
+      if (admin) {
+        const { password, moodlePassword, moodleUsername, ...result } = admin;
+        const payload = {
+          email: admin.email,
+          sub: admin.id,
+          role: admin.role,
+        };
+        return {
+          access_token: this.jwtService.sign(payload),
+          user: result,
+        };
+      } else if (student) {
+        const payload = {
+          email: student.email,
+          sub: student.id,
+          studentId: student.studentId,
+          role: UserRole.STUDENT,
+        };
+        return {
+          access_token: this.jwtService.sign(payload),
+          user: { ...student, role: UserRole.STUDENT },
+        };
+      }
+      throw new UnauthorizedException();
+    } catch (error) {
+      throw error;
+    }
   }
 }

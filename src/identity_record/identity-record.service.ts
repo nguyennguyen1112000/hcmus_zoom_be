@@ -137,17 +137,19 @@ export class IdentityRecordService {
     }
   }
 
-  async getAll() {
+  async getAll(user: any) {
     try {
-      const records = await this.recordRepository
+      const query = this.recordRepository
         .createQueryBuilder('identity')
         .leftJoinAndSelect('identity.room', 'room')
         .leftJoinAndSelect('room.subject', 'subject')
-        .leftJoinAndSelect('room.proctors', 'proctors')
+        .leftJoinAndSelect('room.proctors', 'proctor')
         .leftJoinAndSelect('identity.faceImage', 'faceImage')
         .leftJoinAndSelect('identity.cardImage', 'cardImage')
-        .orderBy('identity.created_at', 'DESC')
-        .getMany();
+        .orderBy('identity.created_at', 'DESC');
+      if (user.role == UserRole.PROCTOR)
+        query.andWhere('proctor.id = :userId', { userId: user.id });
+      const records = await query.getMany();
       const merged = records.reduce((r, { studentId, roomId, ...rest }) => {
         const key = `${roomId}-${studentId}`;
         r[key] = r[key] || {
@@ -170,18 +172,20 @@ export class IdentityRecordService {
     }
   }
 
-  async getAllByRoom(id: number) {
+  async getAllByRoom(user: any, id: number) {
     try {
-      const records = await this.recordRepository
+      const query = this.recordRepository
         .createQueryBuilder('identity')
         .leftJoinAndSelect('identity.room', 'room')
         .leftJoinAndSelect('room.subject', 'subject')
-        .leftJoinAndSelect('room.proctors', 'proctors')
+        .leftJoinAndSelect('room.proctors', 'proctor')
         .leftJoinAndSelect('identity.faceImage', 'faceImage')
         .leftJoinAndSelect('identity.cardImage', 'cardImage')
         .where('room.id = :roomId', { roomId: id })
-        .orderBy('identity.created_at', 'DESC')
-        .getMany();
+        .orderBy('identity.created_at', 'DESC');
+      if (user.role == UserRole.PROCTOR)
+        query.andWhere('proctor.id = :userId', { userId: user.id });
+      const records = await query.getMany();
       const merged = records.reduce((r, { studentId, ...rest }) => {
         const key = `${studentId}`;
         r[key] = r[key] || {

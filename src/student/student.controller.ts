@@ -30,24 +30,30 @@ import { diskStorage } from 'multer';
 import { editFileName } from 'src/identity/helper/generate-file-name';
 import { excelFileFilter } from 'src/helpers/excel-file-filter';
 import { UpdateStudentDto } from './dto/update-student.dto';
+import { Roles } from 'src/auth/decorator/roles.decorator';
+import { UserRole } from 'src/users/decorator/user.enum';
+import { GetUser } from 'src/users/decorator/user.decorator';
 @ApiTags('students')
 @Controller('students')
 export class StudentsController {
   constructor(private readonly studentsService: StudentsService) {}
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiBearerAuth('JWT-auth')
+  @Roles(UserRole.ADMIN)
   @Post()
   create(@Body() createStudentDto: CreateStudentDto) {
     return this.studentsService.create(createStudentDto);
   }
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiBearerAuth('JWT-auth')
+  @Roles(UserRole.ADMIN)
   @Delete()
   delete(@Body() ids: number[]) {
     return this.studentsService.deletes(ids);
   }
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiBearerAuth('JWT-auth')
+  @Roles(UserRole.ADMIN)
   @Get()
   findAll() {
     return this.studentsService.findAll();
@@ -71,15 +77,18 @@ export class StudentsController {
   findOne(@Param('studentId') studentId: string) {
     return this.studentsService.findOne(studentId);
   }
-
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @ApiBearerAuth('JWT-auth')
   @Put(':id')
+  @Roles(UserRole.ADMIN)
   update(@Param() id: number, @Body() updateStudentDto: UpdateStudentDto) {
     return this.studentsService.update(id, updateStudentDto);
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiBearerAuth('JWT-auth')
   @Post('upload')
+  @Roles(UserRole.ADMIN)
   @ApiConsumes('multipart/form-data')
   @ApiBody({
     schema: {

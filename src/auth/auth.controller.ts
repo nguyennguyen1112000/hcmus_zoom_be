@@ -35,6 +35,11 @@ export class AuthController {
     return await this.authService.loginMoodle(username, password);
   }
 
+  @Post('login/microsoft')
+  async loginMicrosoft(@Body('accessToken') accessToken: string) {
+    return await this.authService.loginWithMicrosoft(accessToken);
+  }
+
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth('JWT-auth')
   @Get('profile')

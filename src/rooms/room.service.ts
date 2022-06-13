@@ -58,7 +58,7 @@ export class RoomsService {
       .leftJoinAndSelect('room.students', 'student')
       .leftJoinAndSelect('room.proctors', 'proctor');
     if (user.role == UserRole.PROCTOR)
-      query.where('proctor.id = :protorId', { proctorId: user.id });
+      query.where('proctor.id = :proctorId', { proctorId: user.id });
     if (user.role == UserRole.STUDENT)
       query.where('student.id = :studentId', { studentId: user.id });
     const rooms = await query.getMany();

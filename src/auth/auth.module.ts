@@ -9,6 +9,7 @@ import { AuthController } from './auth.controller';
 import { ZoomsModule } from 'src/zoom/zoom.module';
 import { StudentsModule } from 'src/student/student.module';
 import { MoodlesModule } from 'src/moodle/moodle.module';
+import { HttpModule } from '@nestjs/axios';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { MoodlesModule } from 'src/moodle/moodle.module';
     ZoomsModule,
     StudentsModule,
     MoodlesModule,
+    HttpModule,
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy],
