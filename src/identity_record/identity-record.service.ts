@@ -68,6 +68,8 @@ export class IdentityRecordService {
     try {
       const record = await this.recordRepository.findOne(id);
       if (!record) throw new NotFoundException('Not found record');
+      if (record.cardImage)
+        await this.imageService.deleteImage(record.cardImage.id);
       record.idStatus = idStatus;
       record.cardImage = image;
       record.duration = new Date().getTime() - record.created_at.getTime();

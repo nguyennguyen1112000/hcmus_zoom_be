@@ -73,6 +73,7 @@ export class EkycsService {
 
   async extractor(file: any): Promise<any> {
     try {
+      let errorMessages = [];
       const config = await this.configService.getDefault();
       const url = process.env.EKYC_API;
       const predictStudentID = await this.predictStudentId(file);
@@ -84,26 +85,26 @@ export class EkycsService {
 
       if (!isStudentID) {
         const checkVal = await this.checkVal(file, config.ekycToken);
+        console.log(checkVal.predicts);
 
         if (checkVal.predicts) {
-          if (checkVal.photocopy && checkVal.photocopy == 6)
-            throw new BadRequestException(
-              'Photo taken is a photocopy, taken via screen',
-            );
+          if (checkVal.predicts.photocopy && checkVal.predicts.photocopy == 6)
+            errorMessages.push('Photo taken is a photocopy, taken via screen');
+
           if (checkVal.iluminate) {
-            switch (checkVal.iluminatie) {
+            switch (checkVal.predicts.iluminate) {
               case 3:
-                throw new BadRequestException('The photo is too bright');
+                errorMessages.push('The photo is too bright');
               case 4:
-                throw new BadRequestException('The photo is too dark');
+                errorMessages.push('The photo is too dark');
               case 5:
-                throw new BadRequestException('The photo is too blurred');
+                errorMessages.push('The photo is too blurred');
               default:
                 break;
             }
           }
-          if (checkVal.face && checkVal.face == 7)
-            throw new BadRequestException('No face found');
+          if (checkVal.predicts.face && checkVal.predicts.face == 7)
+            errorMessages.push('Not found any face in verification document');
         }
         const fileType = await this.classify(file, config.ekycToken);
         let type = -1;
@@ -123,34 +124,21 @@ export class EkycsService {
           throw new BadRequestException(
             'Unable to determine verification document type',
           );
-
-        return new Promise((resolve, reject) => {
-          request.post(
-            {
-              url: `${url}/doc/crop_extract`,
-              headers: {
-                Authorization: `Bearer ${config.ekycToken}`,
-                'Content-Type': 'application/json',
-                Accept: 'application/json',
-              },
-              formData: {
-                binary_file: fs.createReadStream(file.path),
-                doc_type: type,
-              },
-            },
-            function (error, response, body) {
-              resolve({ ...JSON.parse(body), type: ImageType.ID_CARD });
-            },
-          );
-        });
+        return {
+          extractData: await this.extractId(file, type, config.ekycToken),
+          errorMessages,
+        };
       } else {
         const checkValFace = await this.checkValFace(file, config.ekycToken);
 
         if (checkValFace.predicts) {
           if (checkValFace.face && checkValFace.face == 7)
-            throw new BadRequestException('No face found');
+            errorMessages.push('Not found any face in verification document');
         }
-        return await this.extractStudentId(file);
+        return {
+          extractData: await this.extractStudentId(file),
+          errorMessages,
+        };
       }
     } catch (error) {
       throw error;
@@ -257,6 +245,33 @@ export class EkycsService {
           },
           function (error, response, body) {
             resolve({ ...body, type: ImageType.STUDENT_CARD });
+          },
+        );
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async extractId(file: any, type: number, token: string): Promise<any> {
+    try {
+      const url = process.env.EKYC_API;
+      return new Promise((resolve, reject) => {
+        request.post(
+          {
+            url: `${url}/doc/crop_extract`,
+            headers: {
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'application/json',
+              Accept: 'application/json',
+            },
+            formData: {
+              binary_file: fs.createReadStream(file.path),
+              doc_type: type,
+            },
+          },
+          function (error, response, body) {
+            resolve({ ...JSON.parse(body), type: ImageType.ID_CARD });
           },
         );
       });

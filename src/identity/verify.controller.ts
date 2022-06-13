@@ -75,29 +75,22 @@ export class VerifyController {
     const images = await this.imagesService.getAllByStudentId(
       verifyStudentDto.studentId,
     );
-    const uploadTasks = images.map(
-      (img) =>
-        new Promise(async (resolve, reject) => {
-          const file = await this.imagesService.getFile(img.imageId);
-          const target = createWriteStream(
-            `./public/images/${img.imageId}.jpg`,
-          );
-          file.pipe(target);
-          target.on('finish', resolve);
-        }),
-    );
-    // await Promise.all(
-    //   images.map(async (img) => {
-    //     const file = await this.imagesService.getFile(img.imageId);
-    //     const target = createWriteStream(`./public/images/${img.imageId}.jpg`);
-    //     file.pipe(target);
-    //     //target.on("finish", resolve);
-    //   }),
-    //);
-    return Promise.all(uploadTasks).then(async () => {
-      return await this.verifyService.verify(file, verifyStudentDto, images);
-    });
-    //return await this.verifyService.verify(file, verifyStudentDto, images);
+    // const uploadTasks = images.map(
+    //   (img) =>
+    //     new Promise(async (resolve, reject) => {
+    //       const file = await this.imagesService.getFile(img.imageId);
+    //       const target = createWriteStream(
+    //         `./public/images/${img.imageId}.jpg`,
+    //       );
+    //       file.pipe(target);
+    //       target.on('finish', resolve);
+    //     }),
+    // );
+
+    // return Promise.all(uploadTasks).then(async () => {
+    //   return await this.verifyService.verify(file, verifyStudentDto, images);
+    // });
+    return await this.verifyService.verify(file, verifyStudentDto, images);
   }
 
   @Post('id')

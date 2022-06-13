@@ -41,25 +41,14 @@ export class VerifyService {
     await faceapi.nets.ssdMobilenetv1.loadFromDisk(MODEL_URL);
     //Fetch images
 
-    const labeledFaceDescriptors = await Promise.all(
-      [studentId].map(async (label) => {
-        const descriptions = [];
-        await Promise.all(
-          images.map(async (image) => {
-            const img = await canvas.loadImage(
-              `./public/images/${image.imageId}.jpg`,
-            );
-
-            const detections = await faceapi
-              .detectSingleFace(img as any)
-              .withFaceLandmarks()
-              .withFaceDescriptor();
-            descriptions.push(detections.descriptor);
-          }),
-        );
-
-        return new faceapi.LabeledFaceDescriptors(label, descriptions);
-      }),
+    const labeledFaceDescriptors = new faceapi.LabeledFaceDescriptors(
+      studentId,
+      images.map(
+        (image) =>
+          new Float32Array(
+            image.faceDescriptors.match(/-?\d+(?:\.\d+)?/g).map(Number),
+          ),
+      ),
     );
     const config = await this.configService.getDefault();
     const faceMatcher = new faceapi.FaceMatcher(labeledFaceDescriptors, 0.6);
@@ -81,9 +70,9 @@ export class VerifyService {
       ImageType.FACE_RESULT,
     );
 
-    images.forEach((img) => {
-      fs.unlinkSync(`./public/images/${img.imageId}.jpg`);
-    });
+    // images.forEach((img) => {
+    //   fs.unlinkSync(`./public/images/${img.imageId}.jpg`);
+    // });
 
     let verifiedStatus =
       results.length == 0 ? false : results[0].label == studentId;
@@ -104,7 +93,10 @@ export class VerifyService {
     try {
       const student = await this.studentService.findOne(user.studentId);
       let imageType = ImageType.OTHERS;
-      const extractData = await this.ekycService.extractor(file);
+
+      const res = await this.ekycService.extractor(file);
+
+      const { extractData, errorMessages } = res;
       let check = true;
       if (extractData) {
         if (extractData.type == ImageType.STUDENT_CARD) {
@@ -127,7 +119,10 @@ export class VerifyService {
                 name1 = name1.replace(/\s{2,}/g, ' ').trim();
                 name2 = name2.replace(/\s{2,}/g, ' ').trim();
                 const name3 = removeVietnameseTones(name2);
-                if (name1 != name2 && name1 != name3) check = false;
+                if (name1 != name2 && name1 != name3) {
+                  check = false;
+                  errorMessages.push('Name is not match');
+                }
                 if (!student.birthday)
                   throw new BadRequestException(
                     'Not found your birthday information in our system. Please contact your proctor!',
@@ -135,15 +130,19 @@ export class VerifyService {
                 if (
                   extractData.predicts[0].final.dob !=
                   formatDate(student.birthday)
-                )
+                ) {
                   check = false;
+                  errorMessages.push('Date of birth is not match');
+                }
                 // console.log(
                 //   extractData.predicts[0].final.dob,
                 //   formatDate(student.birthday),
                 // );
 
-                if (student.studentId != extractData.predicts[0].final.id_num)
+                if (student.studentId != extractData.predicts[0].final.id_num) {
                   check = false;
+                  errorMessages.push('Student ID is not match');
+                }
                 // console.log(
                 //   student.studentId,
                 //   extractData.predicts[0].final.id_num,
@@ -167,8 +166,10 @@ export class VerifyService {
                 throw new BadRequestException(
                   'Not found your birthday information in our system. Please contact your proctor!',
                 );
-              if (extractData.predicts[0].dob != formatDate(student.birthday))
+              if (extractData.predicts[0].dob != formatDate(student.birthday)) {
                 check = false;
+                errorMessages.push('Date of birth is not match');
+              }
               // console.log(
               //   extractData.predicts[0].dob,
               //   formatDate(student.birthday),
@@ -187,13 +188,11 @@ export class VerifyService {
               name1 = name1.replace(/\s{2,}/g, ' ').trim();
               name2 = name2.replace(/\s{2,}/g, ' ').trim();
               const name3 = removeVietnameseTones(name2);
-              if (name1 != name2 && name1 != name3) check = false;
-              return {
-                name1,
-                name2,
-                birthday1: extractData.predicts[0].dob,
-                birthday2: formatDate(student.birthday),
-              };
+
+              if (name1 != name2 && name1 != name3) {
+                check = false;
+                errorMessages.push('Name is not match');
+              }
             } else check = false;
           } else check = false;
         } else check = false;
@@ -206,12 +205,16 @@ export class VerifyService {
         fs.unlinkSync(file.path);
       }
 
-      return await this.identiyRecordService.updateIDStatus(
+      const record = await this.identiyRecordService.updateIDStatus(
         recordId,
         check,
         imageResult,
       );
+      return { record, errorMessages };
     } catch (error) {
+      if (fs.existsSync(file.path)) {
+        fs.unlinkSync(file.path);
+      }
       console.log(error);
       throw error;
     }

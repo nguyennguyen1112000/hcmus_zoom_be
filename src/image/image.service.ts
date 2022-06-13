@@ -9,6 +9,10 @@ import { StudentsService } from 'src/student/student.service';
 import { ImageType } from './decorator/image-type.enum';
 import { Student } from 'src/student/entities/student.entity';
 import { CreateStudentDto } from 'src/student/dto/create-student.dto';
+import * as faceapi from '@vladmandic/face-api';
+import * as canvas from 'canvas';
+const { Canvas, Image } = canvas;
+faceapi.env.monkeyPatch({ Canvas, Image } as any);
 @Injectable()
 export class ImagesService {
   constructor(
@@ -171,10 +175,25 @@ export class ImagesService {
   }
   async createDataV1(file: any, studentId: string) {
     try {
+      const MODEL_URL = './models';
+      await faceapi.nets.tinyFaceDetector.loadFromDisk(MODEL_URL);
+      await faceapi.nets.faceLandmark68Net.loadFromDisk(MODEL_URL);
+      await faceapi.nets.faceRecognitionNet.loadFromDisk(MODEL_URL);
+      await faceapi.nets.faceExpressionNet.loadFromDisk(MODEL_URL);
+      await faceapi.nets.ssdMobilenetv1.loadFromDisk(MODEL_URL);
+      const img = await canvas.loadImage(file.path);
+
+      const detections = await faceapi
+        .detectSingleFace(img as any)
+        .withFaceLandmarks()
+        .withFaceDescriptor();
+      if (!detections)
+        throw new BadRequestException('Not found any face in the picture');
       const image = new ImageData();
       let student = await this.studentsService.findOne(studentId);
       image.student = student;
       image.type = ImageType.FACE_DATA;
+      image.faceDescriptors = detections.descriptor.toString();
 
       const driveClientId = process.env.GOOGLE_DRIVE_CLIENT_ID;
       const driveClientSecret = process.env.GOOGLE_DRIVE_CLIENT_SECRET;
@@ -263,7 +282,6 @@ export class ImagesService {
     const image = await this.imagesRepository.findOne(id);
     if (!image)
       throw new BadRequestException(`Image with id = ${id} not found `);
-    console.log(image.imageId);
     await googleDriveService.deleteFile(image.imageId);
     return await this.imagesRepository.remove(image);
   }

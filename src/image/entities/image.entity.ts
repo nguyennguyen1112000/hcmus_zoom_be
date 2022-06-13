@@ -31,6 +31,9 @@ export class ImageData {
   @Column()
   originFileName: string;
 
+  @Column('text', { nullable: true })
+  faceDescriptors: string;
+
   @Column({ nullable: true })
   studentId?: number;
 
