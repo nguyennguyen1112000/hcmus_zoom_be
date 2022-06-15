@@ -7,7 +7,9 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { AuthService } from 'src/auth/auth.service';
+import { CreateRoomDto } from 'src/rooms/dto/create-room.dto';
 import { ZoomRoom } from 'src/rooms/entities/room.entity';
+import { RoomsService } from 'src/rooms/room.service';
 
 @Injectable()
 export class ZoomsService {
@@ -15,6 +17,7 @@ export class ZoomsService {
     private httpService: HttpService,
     @Inject(forwardRef(() => AuthService))
     private authService: AuthService,
+    private roomService: RoomsService,
   ) {}
 
   async getAccessToken(code: string) {
@@ -128,9 +131,14 @@ export class ZoomsService {
       const response = await this.httpService
         .post(url, data, { headers: headersRequest })
         .toPromise();
-      console.log(response.data);
-
-      return response.data;
+      const { id, topic, agenda, password, join_url } = response.data;
+      const createRoomDto = new CreateRoomDto();
+      createRoomDto.description = agenda;
+      createRoomDto.name = topic;
+      createRoomDto.passcode = password;
+      createRoomDto.url = join_url;
+      createRoomDto.zoomId = id;
+      return await this.roomService.create(createRoomDto);
     } catch (error) {
       if (error.response.status == 401)
         throw new UnauthorizedException('Invalid access token');

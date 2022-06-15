@@ -24,6 +24,8 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { editFileName } from 'src/identity/helper/generate-file-name';
 import { excelFileFilter } from 'src/helpers/excel-file-filter';
+import { Roles } from 'src/auth/decorator/roles.decorator';
+import { UserRole } from 'src/users/decorator/user.enum';
 @ApiTags('subjects')
 @Controller('subjects')
 export class SubjectsController {
@@ -59,6 +61,7 @@ export class SubjectsController {
   }
   @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiBearerAuth('JWT-auth')
+  @Roles(UserRole.ADMIN, UserRole.PROCTOR)
   @Post()
   create(@Body() createSubjectDto: CreateSubjectDto) {
     return this.subjectsService.create(createSubjectDto);

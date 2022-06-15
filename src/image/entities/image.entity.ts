@@ -37,7 +37,9 @@ export class ImageData {
   @Column({ nullable: true })
   studentId?: number;
 
-  @ManyToOne((type) => Student, (student) => student.images)
+  @ManyToOne((type) => Student, (student) => student.images, {
+    onDelete: 'CASCADE',
+  })
   student: Student;
 
   @CreateDateColumn({

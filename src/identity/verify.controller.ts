@@ -9,6 +9,7 @@ import {
   Response,
   StreamableFile,
   UseGuards,
+  BadRequestException,
 } from '@nestjs/common';
 import { VerifyService } from './verify.service';
 import { ApiBearerAuth, ApiBody, ApiConsumes, ApiTags } from '@nestjs/swagger';
@@ -90,6 +91,10 @@ export class VerifyController {
     // return Promise.all(uploadTasks).then(async () => {
     //   return await this.verifyService.verify(file, verifyStudentDto, images);
     // });
+    if (images.length == 0)
+      throw new BadRequestException(
+        'There is no reference data. Please contact your proctor!',
+      );
     return await this.verifyService.verify(file, verifyStudentDto, images);
   }
 

@@ -30,6 +30,7 @@ export class RoomsService {
     private roomsRepository: Repository<ZoomRoom>,
     private subjectService: SubjectsService,
     private connection: Connection,
+    @Inject(forwardRef(() => ZoomsService))
     private zoomsService: ZoomsService,
     private studentsService: StudentsService,
     private usersService: UsersService,

@@ -50,7 +50,9 @@ export class ZoomRoom {
   })
   public updated_at: Date;
 
-  @ManyToOne((type) => Subject, (subjects) => subjects.rooms)
+  @ManyToOne((type) => Subject, (subjects) => subjects.rooms, {
+    onDelete: 'CASCADE',
+  })
   subject: Subject;
 
   @OneToMany((type) => IdentityRecord, (record) => record.room)

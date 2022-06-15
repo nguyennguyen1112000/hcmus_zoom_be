@@ -13,7 +13,7 @@ import { ConfigurationModule } from 'src/config/configuration.module';
   imports: [
     TypeOrmModule.forFeature([ZoomRoom]),
     SubjectsModule,
-    ZoomsModule,
+    forwardRef(() => ZoomsModule),
     StudentsModule,
     UsersModule,
     ConfigurationModule,
