@@ -1,3 +1,4 @@
+/* eslint-disable prefer-const */
 /* eslint-disable @typescript-eslint/no-empty-function */
 import { BadRequestException, Injectable } from '@nestjs/common';
 import * as faceapi from '@vladmandic/face-api';
@@ -18,7 +19,8 @@ import { ConfigurationService } from 'src/config/configuration.service';
 const { Canvas, Image, ImageData } = canvas;
 //import * as streamToBlob from 'stream-to-blob';
 
-//import '@tensorflow/tfjs-node';
+import '@tensorflow/tfjs-node';
+import { CreateExtractDataDto } from 'src/identity_record/dto/create-extract-data.dto';
 // Make face-api.js use that fetch implementation
 faceapi.env.monkeyPatch({ Canvas, Image, ImageData, fetch } as any);
 @Injectable()
@@ -70,34 +72,49 @@ export class VerifyService {
       ImageType.FACE_RESULT,
     );
 
-    // images.forEach((img) => {
-    //   fs.unlinkSync(`./public/images/${img.imageId}.jpg`);
-    // });
-
     let verifiedStatus =
       results.length == 0 ? false : results[0].label == studentId;
-    if (1 - results[0]?.distance < config.credibility) verifiedStatus = false;
+    if (results.length > 0)
+      if (1 - results[0]?.distance < config.credibility) verifiedStatus = false;
+
     const createRecordDto = new CreateIdentityRecordDto();
     const room = await this.roomsService.findOne(roomId);
-    createRecordDto.credibility = 1 - results[0]?.distance;
+    createRecordDto.credibility =
+      results.length > 0 ? 1 - results[0]?.distance : 0;
     createRecordDto.roomId = room.id;
     createRecordDto.studentId = studentId;
-    //createRecordDto.zoomEmail = '18120486@student.hcmus.edu.vn';
     createRecordDto.faceStatus = verifiedStatus;
     createRecordDto.faceImage = imageResult;
+    const lastedRecord = await this.identiyRecordService.findLastedOne();
+    if (lastedRecord && !verifiedStatus)
+      createRecordDto.failTimes = lastedRecord.failTimes + 1;
     const res = await this.identiyRecordService.create(createRecordDto);
     return res;
   }
 
-  async verifyId(file: any, user: any, recordId: string) {
+  async verifyId(file: any, user: any, recordId: string, documentType: number) {
     try {
       const student = await this.studentService.findOne(user.studentId);
       let imageType = ImageType.OTHERS;
 
-      const res = await this.ekycService.extractor(file);
+      const { extractData, errorMessages } = await this.ekycService.extractorV1(
+        file,
+        documentType,
+      );
 
-      const { extractData, errorMessages } = res;
+      let extractFields = {
+        name1: '',
+        name2: '',
+        matchName: true,
+        dob1: '',
+        dob2: '',
+        matchDob: true,
+        studentId1: '',
+        studentId2: '',
+        matchStudentId: true,
+      };
       let check = true;
+      const extractDataDto = new CreateExtractDataDto();
       if (extractData) {
         if (extractData.type == ImageType.STUDENT_CARD) {
           imageType = ImageType.STUDENT_CARD;
@@ -118,43 +135,42 @@ export class VerifyService {
 
                 name1 = name1.replace(/\s{2,}/g, ' ').trim();
                 name2 = name2.replace(/\s{2,}/g, ' ').trim();
+                extractDataDto.extractName = name1;
+                extractDataDto.referenceName = name2;
+                extractFields.name1 = name1.toUpperCase();
                 const name3 = removeVietnameseTones(name2);
                 if (name1 != name2 && name1 != name3) {
                   check = false;
-                  errorMessages.push('Name is not match');
+                  extractFields.matchName = false;
                 }
+                if (name1 == name2) extractFields.name2 = name2.toUpperCase();
+                else if (name1 == name3)
+                  extractFields.name2 = name3.toUpperCase();
+                else extractFields.name2 = name2.toUpperCase();
+
                 if (!student.birthday)
                   throw new BadRequestException(
                     'Not found your birthday information in our system. Please contact your proctor!',
                   );
-                if (
-                  extractData.predicts[0].final.dob !=
-                  formatDate(student.birthday)
-                ) {
-                  check = false;
-                  errorMessages.push('Date of birth is not match');
-                }
-                // console.log(
-                //   extractData.predicts[0].final.dob,
-                //   formatDate(student.birthday),
-                // );
+                extractFields.dob1 = extractData.predicts[0].final.dob;
+                extractFields.dob2 = formatDate(student.birthday);
+                extractDataDto.referenceDob = extractFields.dob2;
+                extractDataDto.extractDob = extractFields.dob1;
 
-                if (student.studentId != extractData.predicts[0].final.id_num) {
+                if (extractFields.dob1 != extractFields.dob2) {
                   check = false;
-                  errorMessages.push('Student ID is not match');
+                  extractFields.matchDob = false;
                 }
-                // console.log(
-                //   student.studentId,
-                //   extractData.predicts[0].final.id_num,
-                // );
-                // return {
-                //   name1,
-                //   name2,
-                //   studentId1: student.studentId,
-                //   studentId2: extractData.predicts[0].final.id_num,
-                //   birthday1: extractData.predicts[0].final.dob,
-                //   birthday2: formatDate(student.birthday),
-                // };
+
+                extractFields.studentId2 = student.studentId;
+                extractFields.studentId1 = extractData.predicts[0].final.id_num;
+                extractDataDto.referenceStudentId = extractFields.studentId2;
+                extractDataDto.extractStudentId = extractFields.studentId1;
+
+                if (extractFields.studentId1 != extractFields.studentId2) {
+                  check = false;
+                  extractFields.matchStudentId = false;
+                }
               }
             } else check = false;
           } else check = false;
@@ -166,14 +182,15 @@ export class VerifyService {
                 throw new BadRequestException(
                   'Not found your birthday information in our system. Please contact your proctor!',
                 );
-              if (extractData.predicts[0].dob != formatDate(student.birthday)) {
+              extractFields.dob1 = extractData.predicts[0].dob;
+              extractFields.dob2 = formatDate(student.birthday);
+              extractDataDto.referenceDob = extractFields.dob2;
+              extractDataDto.extractDob = extractFields.dob1;
+              if (extractFields.dob1 != extractFields.dob2) {
                 check = false;
-                errorMessages.push('Date of birth is not match');
+                extractFields.matchDob = false;
               }
-              // console.log(
-              //   extractData.predicts[0].dob,
-              //   formatDate(student.birthday),
-              // );
+
               if (!student.firstName || !student.lastName)
                 throw new BadRequestException(
                   'Not found your name information in our system. Please contact your proctor!',
@@ -184,14 +201,19 @@ export class VerifyService {
                 ' ' +
                 student.lastName
               ).toLowerCase();
-              //console.log(name1, name2);
               name1 = name1.replace(/\s{2,}/g, ' ').trim();
               name2 = name2.replace(/\s{2,}/g, ' ').trim();
+              extractDataDto.extractName = name1;
+              extractDataDto.referenceName = name2;
               const name3 = removeVietnameseTones(name2);
+              if (name1 == name2) extractFields.name2 = name2.toUpperCase();
+              else if (name1 == name3)
+                extractFields.name2 = name3.toUpperCase();
+              else extractFields.name2 = name2.toUpperCase();
 
               if (name1 != name2 && name1 != name3) {
                 check = false;
-                errorMessages.push('Name is not match');
+                extractFields.matchName = false;
               }
             } else check = false;
           } else check = false;
@@ -209,8 +231,9 @@ export class VerifyService {
         recordId,
         check,
         imageResult,
+        extractDataDto,
       );
-      return { record, errorMessages };
+      return { record, errorMessages, extractFields };
     } catch (error) {
       if (fs.existsSync(file.path)) {
         fs.unlinkSync(file.path);

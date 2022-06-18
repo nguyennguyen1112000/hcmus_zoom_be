@@ -10,6 +10,7 @@ import {
   OneToOne,
   JoinColumn,
 } from 'typeorm';
+import { ExtractData } from './extract-data.entity';
 
 @Entity()
 export class IdentityRecord {
@@ -54,6 +55,9 @@ export class IdentityRecord {
   @Column({ nullable: true })
   accepted: boolean;
 
+  @Column({ nullable: true, default: 0 })
+  failTimes: number;
+
   @OneToOne(() => ImageData)
   @JoinColumn()
   faceImage: ImageData;
@@ -61,4 +65,8 @@ export class IdentityRecord {
   @OneToOne(() => ImageData)
   @JoinColumn()
   cardImage: ImageData;
+
+  @OneToOne(() => ExtractData)
+  @JoinColumn()
+  extractData: ExtractData;
 }

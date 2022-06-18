@@ -8,4 +8,5 @@ export class CreateIdentityRecordDto {
   faceImage?: ImageData;
   cardImage?: ImageData;
   credibility?: number;
+  failTimes?: number;
 }

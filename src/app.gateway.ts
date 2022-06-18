@@ -23,8 +23,11 @@ export class AppGateway
 
   @SubscribeMessage('msgToServer')
   handleMessage(client: Socket, payload: string): void {
-    console.log(payload);
     this.server.emit('msgToClient', payload);
+  }
+  @SubscribeMessage('toServerCloseTerm')
+  handleCloseTerm(client: Socket, payload: string): void {
+    this.server.emit('toClientCloseTerm', payload);
   }
 
   afterInit(server: Server) {

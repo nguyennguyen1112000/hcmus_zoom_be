@@ -6,10 +6,11 @@ import { IdentityRecordController } from './identity-record.controller';
 import { RoomsModule } from 'src/rooms/room.module';
 import { ImagesModule } from 'src/image/image.module';
 import { StudentsModule } from 'src/student/student.module';
+import { ExtractData } from './entities/extract-data.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([IdentityRecord]),
+    TypeOrmModule.forFeature([IdentityRecord, ExtractData]),
     forwardRef(() => RoomsModule),
     ImagesModule,
   ],

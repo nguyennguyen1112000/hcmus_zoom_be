@@ -21,6 +21,8 @@ import { RolesGuard } from 'src/auth/decorator/roles.guard';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { ImageType } from './decorator/image-type.enum';
 import { GetUser } from 'src/users/decorator/user.decorator';
+import { Roles } from 'src/auth/decorator/roles.decorator';
+import { UserRole } from 'src/users/decorator/user.enum';
 
 @ApiTags('images')
 @Controller('images')
@@ -66,6 +68,7 @@ export class ImageController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiBearerAuth('JWT-auth')
   @Get('me')
+  @Roles(UserRole.STUDENT)
   async getMyImages(@GetUser() user) {
     return this.imageService.getMyFaceImage(user.studentId);
   }
@@ -82,6 +85,7 @@ export class ImageController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiBearerAuth('JWT-auth')
   @Post('collect/data/v1')
+  @Roles(UserRole.STUDENT)
   @ApiConsumes('multipart/form-data')
   @ApiBody({
     schema: {

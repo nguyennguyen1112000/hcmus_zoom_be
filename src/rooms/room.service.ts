@@ -371,16 +371,8 @@ export class RoomsService {
       const config = await this.configService.getDefault();
       let failExceed = false;
 
-      if (config && config?.maxFailAttempt) {
-        const failFaceCheck = records.filter(
-          (record) => record.faceStatus == false,
-        ).length;
-        const failIdCheck = records.filter(
-          (record) => record.idStatus == false,
-        ).length;
-        if (config.maxFailAttempt < failFaceCheck + failIdCheck)
-          failExceed = true;
-      }
+      if (config && config?.maxFailAttempt && records.length > 0)
+        if (config.maxFailAttempt < records[0].failTimes) failExceed = true;
 
       return {
         timeToVerify: check,

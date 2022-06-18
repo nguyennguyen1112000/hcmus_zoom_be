@@ -16,7 +16,9 @@ import { StudentsService } from 'src/student/student.service';
 import { UserRole } from 'src/users/decorator/user.enum';
 
 import { Repository } from 'typeorm';
+import { CreateExtractDataDto } from './dto/create-extract-data.dto';
 import { CreateIdentityRecordDto } from './dto/create-identity-record.dto';
+import { ExtractData } from './entities/extract-data.entity';
 import { IdentityRecord } from './entities/indentity-record.entity';
 @Injectable()
 export class IdentityRecordService {
@@ -26,6 +28,8 @@ export class IdentityRecordService {
     @Inject(forwardRef(() => RoomsService))
     private roomService: RoomsService,
     private imageService: ImagesService,
+    @InjectRepository(ExtractData)
+    private extractRepository: Repository<ExtractData>,
   ) {}
   async create(createRecordDto: CreateIdentityRecordDto) {
     try {
@@ -39,9 +43,12 @@ export class IdentityRecordService {
       //   const cardImage = await this.imageService.getFile(cardImageId);
       //   record.cardImage = cardImage;
       // }
+
       await this.recordRepository.save(record);
       return record;
     } catch (err) {
+      console.log(err);
+
       throw new BadRequestException(err.message);
     }
   }
@@ -63,16 +70,33 @@ export class IdentityRecordService {
     if (!record) throw new NotFoundException('Not found record');
     return record;
   }
+  async findLastedOne() {
+    const records = await this.recordRepository.find({
+      order: { created_at: 'DESC' },
+    });
+    if (records.length > 0) return records[0];
+    return null;
+  }
 
-  async updateIDStatus(id: string, idStatus: boolean, image: ImageData) {
+  async updateIDStatus(
+    id: string,
+    idStatus: boolean,
+    image: ImageData,
+    extractDataDto: CreateExtractDataDto,
+  ) {
     try {
       const record = await this.recordRepository.findOne(id);
+      const extract = new ExtractData();
+      assignPartialsToThis(extract, extractDataDto);
+      const saveExtract = await this.extractRepository.save(extract);
       if (!record) throw new NotFoundException('Not found record');
       if (record.cardImage)
         await this.imageService.deleteImage(record.cardImage.id);
       record.idStatus = idStatus;
       record.cardImage = image;
       record.duration = new Date().getTime() - record.created_at.getTime();
+      record.extractData = saveExtract;
+      if (idStatus) record.accepted = true;
       return await this.recordRepository.save(record);
     } catch (error) {
       throw error;
@@ -116,7 +140,7 @@ export class IdentityRecordService {
         .andWhere('identity.studentId = :studentId', {
           studentId: user.studentId,
         })
-        .orderBy('identity.created_at', 'ASC');
+        .orderBy('identity.created_at', 'DESC');
 
       return query.getMany();
     } catch (error) {
@@ -234,6 +258,7 @@ export class IdentityRecordService {
         .leftJoinAndSelect('identity.room', 'room')
         .leftJoinAndSelect('identity.faceImage', 'faceImage')
         .leftJoinAndSelect('identity.cardImage', 'cardImage')
+        .leftJoinAndSelect('identity.extractData', 'extractData')
         .where('room.id = :roomId', { roomId: roomId })
         .andWhere('identity.studentId = :studentId', { studentId: studentId })
         .orderBy('identity.created_at', 'DESC')

@@ -17,6 +17,7 @@ import { ConfigurationModule } from 'src/config/configuration.module';
     EkycModule,
     StudentsModule,
     ConfigurationModule,
+    IdentityRecordModule,
   ],
   controllers: [VerifyController],
   providers: [VerifyService],
