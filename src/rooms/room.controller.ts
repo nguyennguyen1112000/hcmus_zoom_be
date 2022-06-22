@@ -13,13 +13,7 @@ import {
   Delete,
   Put,
 } from '@nestjs/common';
-import {
-  ApiBearerAuth,
-  ApiBody,
-  ApiConsumes,
-  ApiQuery,
-  ApiTags,
-} from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiConsumes, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { CreateRoomDto } from './dto/create-room.dto';
 import { RolesGuard } from 'src/auth/decorator/roles.guard';
@@ -72,20 +66,6 @@ export class RoomsController {
     return this.roomsService.findAll(user);
   }
 
-  @Get('currentRoom')
-  getCurrentRoomInfo(
-    @Query('studentId') studentId?: string,
-    @Query('zoomId') zoomId?: string,
-    @Query('passcode') passcode?: string,
-    @Query('linkZoom') linkZoom?: string,
-  ) {
-    return this.roomsService.getCurrentRoom(
-      studentId,
-      zoomId,
-      passcode,
-      linkZoom,
-    );
-  }
   @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiBearerAuth('JWT-auth')
   @Get(':id')

@@ -115,6 +115,7 @@ export class StudentsService {
       fs.unlinkSync(fileLoad.path);
       await this.createMany(data);
     } catch (error) {
+      if (fs.existsSync(fileLoad.path)) fs.unlinkSync(fileLoad.path);
       throw error;
     }
   }

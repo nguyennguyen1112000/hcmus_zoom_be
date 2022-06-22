@@ -32,7 +32,6 @@ import { excelFileFilter } from 'src/helpers/excel-file-filter';
 import { UpdateStudentDto } from './dto/update-student.dto';
 import { Roles } from 'src/auth/decorator/roles.decorator';
 import { UserRole } from 'src/users/decorator/user.enum';
-import { GetUser } from 'src/users/decorator/user.decorator';
 @ApiTags('students')
 @Controller('students')
 export class StudentsController {
@@ -85,10 +84,9 @@ export class StudentsController {
     return this.studentsService.update(id, updateStudentDto);
   }
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth('JWT-auth')
   @Post('upload')
-  @Roles(UserRole.ADMIN)
   @ApiConsumes('multipart/form-data')
   @ApiBody({
     schema: {
