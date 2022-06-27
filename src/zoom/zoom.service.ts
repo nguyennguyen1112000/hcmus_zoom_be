@@ -6,10 +6,13 @@ import {
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
+import { auth } from 'googleapis/build/src/apis/abusiveexperiencereport';
 import { AuthService } from 'src/auth/auth.service';
 import { CreateRoomDto } from 'src/rooms/dto/create-room.dto';
 import { ZoomRoom } from 'src/rooms/entities/room.entity';
 import { RoomsService } from 'src/rooms/room.service';
+import axios from 'axios';
+import { createRequestParamString } from 'src/helpers/ultils';
 
 @Injectable()
 export class ZoomsService {
@@ -37,6 +40,58 @@ export class ZoomsService {
       .post(url, null, { headers: headersRequest })
       .toPromise();
     return response.data;
+  }
+  async getAccessTokenV1(code: string) {
+    try {
+      const headersRequest = {
+        Authorization: `Basic ${Buffer.from(
+          process.env.CLIENT_ID + ':' + process.env.CLIENT_SECRET,
+        ).toString('base64')}`,
+        'Content-Type': 'application/x-www-form-urlencoded',
+      };
+      console.log(process.env.CLIENT_ID + '\n' + process.env.CLIENT_SECRET);
+      console.log('Redirect', process.env.REDIRECT_URL);
+      console.log('code', code);
+      const params = {
+        grant_type: 'authorization_code',
+        code: code,
+        redirect_uri: process.env.REDIRECT_URL,
+      };
+
+      const response = await axios({
+        url: 'https://zoom.us/oauth/token',
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        auth: {
+          username: process.env.CLIENT_ID,
+          password: process.env.CLIENT_SECRET,
+        },
+        data: createRequestParamString(params),
+      });
+      return response.data;
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+  async getDeeplink(accessToken) {
+    return await axios({
+      url: 'https://zoom.us/v2/zoomapp/deeplink',
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+      data: {
+        action: JSON.stringify({
+          url: '/your/url',
+          role_name: 'Owner',
+          verified: 1,
+          role_id: 0,
+        }),
+      },
+    });
   }
   async getRefreshToken(user: any) {
     const url = `https://zoom.us/oauth/token?refresh_token=${user.zoom_refresh_token}&grant_type=refresh_token`;

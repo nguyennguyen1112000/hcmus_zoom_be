@@ -60,3 +60,13 @@ export const removeVietnameseTones = (str) => {
   );
   return str;
 };
+export const createRequestParamString = (params) => {
+  const requestParams = new URLSearchParams();
+
+  for (const param in params) {
+    const value = params[param];
+    requestParams.set(param, value);
+  }
+
+  return requestParams.toString();
+};
