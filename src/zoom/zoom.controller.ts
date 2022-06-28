@@ -91,13 +91,6 @@ export class ZoomsController {
     const state = decodeURIComponent(onAuthorizedDto.state);
     const zoomInClientState = session.state;
     const codeVerifier = session.codeVerifier;
-    return {
-      zoomAuthorizationCode,
-      href,
-      state,
-      zoomInClientState,
-      codeVerifier,
-    };
 
     console.log(
       '1. Verify code (from onAuthorized event in client) exists and state matches',
@@ -114,6 +107,7 @@ export class ZoomsController {
         href,
         codeVerifier,
       );
+      return tokenResponse;
 
       const user = await this.authService.validateZoomUserV1(
         tokenResponse.data,
