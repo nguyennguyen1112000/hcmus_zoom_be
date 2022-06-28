@@ -109,13 +109,13 @@ export class ZoomsController {
       );
       return tokenResponse;
 
-      const user = await this.authService.validateZoomUserV1(
-        tokenResponse.data,
-      );
-      if (!user) {
-        throw new UnauthorizedException();
-      }
-      return this.authService.login(user);
+      // const user = await this.authService.validateZoomUserV1(
+      //   tokenResponse.data,
+      // );
+      // if (!user) {
+      //   throw new UnauthorizedException();
+      // }
+      // return this.authService.login(user);
     } catch (error) {
       throw error;
     }
