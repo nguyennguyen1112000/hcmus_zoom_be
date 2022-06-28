@@ -85,11 +85,19 @@ export class ZoomsController {
       'IN-CLIENT ON AUTHORIZED TOKEN HANDLER ==========================================================',
       '\n',
     );
+    console.log(onAuthorizedDto, session.state);
     const zoomAuthorizationCode = onAuthorizedDto.code;
     const href = onAuthorizedDto.href;
     const state = decodeURIComponent(onAuthorizedDto.state);
     const zoomInClientState = session.state;
     const codeVerifier = session.codeVerifier;
+    return {
+      zoomAuthorizationCode,
+      href,
+      state,
+      zoomInClientState,
+      codeVerifier,
+    };
 
     console.log(
       '1. Verify code (from onAuthorized event in client) exists and state matches',
