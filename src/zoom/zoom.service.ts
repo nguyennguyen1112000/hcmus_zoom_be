@@ -200,4 +200,34 @@ export class ZoomsService {
       throw error;
     }
   }
+  async getZoomAccessToken(
+    zoomAuthorizationCode,
+    redirect_uri = process.env.ZOOM_APP_REDIRECT_URI,
+    pkceVerifier = undefined,
+  ) {
+    const params = {
+      grant_type: 'authorization_code',
+      code: zoomAuthorizationCode,
+      redirect_uri,
+    };
+
+    if (typeof pkceVerifier === 'string') {
+      params['code_verifier'] = pkceVerifier;
+    }
+
+    const tokenRequestParamString = createRequestParamString(params);
+
+    return await axios({
+      url: 'https://api.zoom.us/oauth/token',
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      auth: {
+        username: process.env.CLIENT_ID,
+        password: process.env.CLIENT_SECRET,
+      },
+      data: tokenRequestParamString,
+    });
+  }
 }
