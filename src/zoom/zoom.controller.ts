@@ -97,9 +97,9 @@ export class ZoomsController {
     );
 
     try {
-      if (!zoomAuthorizationCode || state !== zoomInClientState) {
-        throw new Error('State mismatch');
-      }
+      // if (!zoomAuthorizationCode || state !== zoomInClientState) {
+      //   throw new Error('State mismatch');
+      // }
 
       console.log('2. Getting Zoom access token and user', '\n');
       const tokenResponse = await this.zoomsService.getZoomAccessToken(
