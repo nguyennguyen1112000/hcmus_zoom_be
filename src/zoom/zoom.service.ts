@@ -6,7 +6,6 @@ import {
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
-import { auth } from 'googleapis/build/src/apis/abusiveexperiencereport';
 import { AuthService } from 'src/auth/auth.service';
 import { CreateRoomDto } from 'src/rooms/dto/create-room.dto';
 import { ZoomRoom } from 'src/rooms/entities/room.entity';
@@ -43,15 +42,6 @@ export class ZoomsService {
   }
   async getAccessTokenV1(code: string) {
     try {
-      const headersRequest = {
-        Authorization: `Basic ${Buffer.from(
-          process.env.CLIENT_ID + ':' + process.env.CLIENT_SECRET,
-        ).toString('base64')}`,
-        'Content-Type': 'application/x-www-form-urlencoded',
-      };
-      console.log(process.env.CLIENT_ID + '\n' + process.env.CLIENT_SECRET);
-      console.log('Redirect', process.env.REDIRECT_URL);
-      console.log('code', code);
       const params = {
         grant_type: 'authorization_code',
         code: code,

@@ -6,6 +6,7 @@ import {
   Query,
   Redirect,
   Session,
+  UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
@@ -17,11 +18,15 @@ import { Roles } from 'src/auth/decorator/roles.decorator';
 import { UserRole } from 'src/users/decorator/user.enum';
 import { generateCodeVerifier, generateState } from './zoom-helpers';
 import { OnAuthorizedDto } from './dto/onauthorized.dto';
+import { AuthService } from 'src/auth/auth.service';
 
 @ApiTags('zooms')
 @Controller('zooms')
 export class ZoomsController {
-  constructor(private readonly zoomsService: ZoomsService) {}
+  constructor(
+    private readonly zoomsService: ZoomsService,
+    private authService: AuthService,
+  ) {}
   @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiBearerAuth('JWT-auth')
   @Roles(UserRole.ADMIN)
@@ -102,33 +107,13 @@ export class ZoomsController {
         codeVerifier,
       );
 
-      const zoomAccessToken = tokenResponse.data.access_token;
-      console.log(
-        '2a. Use code to get Zoom access token - response data: ',
+      const user = await this.authService.validateZoomUserV1(
         tokenResponse.data,
-        '\n',
       );
-
-      console.log('2b. Get Zoom user from Zoom API with access token');
-      const userResponse = await this.zoomsService.profile(zoomAccessToken);
-      const zoomUserId = userResponse.id;
-      session.user = zoomUserId;
-
-      console.log(
-        '2c. Use access token to get Zoom user - response data: ',
-        userResponse,
-        '\n',
-      );
-
-      console.log(
-        '2d. Save the tokens in the store so we can look them up when the Zoom App is opened',
-      );
-
-      // 2c. Save the tokens in the store so we can look them up when the Zoom App is opened:
-      // When the home url for the app is requested on app open in the Zoom client,
-      // the user id (uid field) is in the decrypted x-zoom-app-context header of the GET request
-
-      return { result: 'Success' };
+      if (!user) {
+        throw new UnauthorizedException();
+      }
+      return this.authService.login(user);
     } catch (error) {
       throw error;
     }

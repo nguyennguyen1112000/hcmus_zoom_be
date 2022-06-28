@@ -152,4 +152,33 @@ export class AuthService {
       throw error;
     }
   }
+
+  async validateZoomUserV1(respZoom: any): Promise<any> {
+    if (respZoom.access_token) {
+      const user = await this.zoomsService.profile(respZoom.access_token);
+      const admin = await this.usersService.findOne(user.email);
+      const student = await this.studentService.findOneWithNoError(
+        user.email.split('@')[0],
+      );
+      if (admin) {
+        const { password, moodlePassword, moodleUsername, ...result } = admin;
+        return {
+          ...user,
+          ...result,
+          zoom_access_token: respZoom.access_token,
+          zoom_refresh_token: respZoom.refresh_token,
+        };
+      } else if (student) {
+        return {
+          ...user,
+          ...student,
+          role: UserRole.STUDENT,
+          studentId: user.email.split('@')[0],
+          zoom_access_token: respZoom.access_token,
+          zoom_refresh_token: respZoom.refresh_token,
+        };
+      }
+    }
+    return null;
+  }
 }
