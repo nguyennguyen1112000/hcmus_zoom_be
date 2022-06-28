@@ -77,45 +77,22 @@ export class ZoomsController {
   }
 
   @Post('onauthorized')
-  async inClientOnAuthorized(
-    @Session() session: Record<string, any>,
-    @Body() onAuthorizedDto: OnAuthorizedDto,
-  ) {
-    console.log(
-      'IN-CLIENT ON AUTHORIZED TOKEN HANDLER ==========================================================',
-      '\n',
-    );
-    console.log(onAuthorizedDto, session.state);
-    const zoomAuthorizationCode = onAuthorizedDto.code;
-    const href = onAuthorizedDto.href;
-    const state = decodeURIComponent(onAuthorizedDto.state);
-    const zoomInClientState = session.state;
-    const codeVerifier = session.codeVerifier;
-
-    console.log(
-      '1. Verify code (from onAuthorized event in client) exists and state matches',
-    );
-
+  async inClientOnAuthorized(@Body() onAuthorizedDto: OnAuthorizedDto) {
     try {
-      // if (!zoomAuthorizationCode || state !== zoomInClientState) {
-      //   throw new Error('State mismatch');
-      // }
-
-      console.log('2. Getting Zoom access token and user', '\n');
+      const { code, href, codeVerifier } = onAuthorizedDto;
       const tokenResponse = await this.zoomsService.getZoomAccessToken(
-        zoomAuthorizationCode,
+        code,
         href,
         codeVerifier,
       );
-      return tokenResponse;
 
-      // const user = await this.authService.validateZoomUserV1(
-      //   tokenResponse.data,
-      // );
-      // if (!user) {
-      //   throw new UnauthorizedException();
-      // }
-      // return this.authService.login(user);
+      const user = await this.authService.validateZoomUserV1(
+        tokenResponse.data,
+      );
+      if (!user) {
+        throw new UnauthorizedException();
+      }
+      return this.authService.login(user);
     } catch (error) {
       throw error;
     }

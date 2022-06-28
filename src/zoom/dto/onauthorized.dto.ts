@@ -9,5 +9,5 @@ export class OnAuthorizedDto {
   href: string;
 
   @ApiProperty()
-  state: string;
+  codeVerifier: string;
 }

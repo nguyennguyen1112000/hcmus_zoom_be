@@ -204,7 +204,7 @@ export class ZoomsService {
     if (typeof pkceVerifier === 'string') {
       params['code_verifier'] = pkceVerifier;
     }
-    return params;
+
     const tokenRequestParamString = createRequestParamString(params);
 
     return await axios({
