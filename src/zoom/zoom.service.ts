@@ -183,6 +183,7 @@ export class ZoomsService {
       createRoomDto.passcode = password;
       createRoomDto.url = join_url;
       createRoomDto.zoomId = id;
+      createRoomDto.subjectId = data.subjectId;
       return await this.roomService.create(createRoomDto);
     } catch (error) {
       if (error.response.status == 401)

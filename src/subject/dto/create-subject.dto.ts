@@ -32,5 +32,5 @@ export class CreateSubjectDto {
   startTime: string;
 
   @ApiProperty()
-  examTime: number;
+  numGroups: number;
 }

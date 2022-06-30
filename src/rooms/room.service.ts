@@ -89,10 +89,10 @@ export class RoomsService {
     const room = await this.roomsRepository
       .createQueryBuilder('room')
       .leftJoinAndSelect('room.proctors', 'user')
-      .leftJoinAndSelect('room.subject', 'subject')
       .leftJoinAndSelect('room.students', 'student')
-
       .leftJoinAndSelect('student.images', 'imageData')
+      .leftJoinAndSelect('room.subject', 'subject')
+      .leftJoinAndSelect('subject.students', 'subject_students')
       .where('room.id = :id', { id })
       .getOne();
     if (!room) throw new BadRequestException('Not found room zoom');

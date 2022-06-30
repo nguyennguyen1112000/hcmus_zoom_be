@@ -46,7 +46,7 @@ export class SubjectsService {
   }
 
   async findAll() {
-    return await this.subjectsRepository.find();
+    return await this.subjectsRepository.find({relations: ['students']});
   }
   async findOne(id: number) {
     return await this.subjectsRepository.findOne(id, {

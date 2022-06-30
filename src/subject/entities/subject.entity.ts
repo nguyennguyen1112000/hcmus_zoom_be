@@ -50,6 +50,9 @@ export class Subject {
   @Column({ nullable: true })
   moodleId: number;
 
+  @Column({ nullable: true, default: 1 })
+  numGroups: number;
+  
   @CreateDateColumn({
     type: 'timestamp',
     default: () => 'CURRENT_TIMESTAMP(6)',

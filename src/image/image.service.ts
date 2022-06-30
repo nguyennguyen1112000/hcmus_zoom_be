@@ -22,21 +22,26 @@ export class ImagesService {
   ) {}
   async create(file: any, studentId: string, type: ImageType) {
     try {
-      const MODEL_URL = './models';
-      await faceapi.nets.tinyFaceDetector.loadFromDisk(MODEL_URL);
-      await faceapi.nets.faceLandmark68Net.loadFromDisk(MODEL_URL);
-      await faceapi.nets.faceRecognitionNet.loadFromDisk(MODEL_URL);
-      await faceapi.nets.faceExpressionNet.loadFromDisk(MODEL_URL);
-      await faceapi.nets.ssdMobilenetv1.loadFromDisk(MODEL_URL);
-      const img = await canvas.loadImage(file.path);
-
-      const detections = await faceapi
-        .detectSingleFace(img as any)
-        .withFaceLandmarks()
-        .withFaceDescriptor();
-      if (!detections)
-        throw new BadRequestException('Not found any face in the picture');
       const image = new ImageData();
+      if (type == ImageType.FACE_DATA) {
+        const MODEL_URL = './models';
+
+        await faceapi.nets.tinyFaceDetector.loadFromDisk(MODEL_URL);
+        await faceapi.nets.faceLandmark68Net.loadFromDisk(MODEL_URL);
+        await faceapi.nets.faceRecognitionNet.loadFromDisk(MODEL_URL);
+        await faceapi.nets.faceExpressionNet.loadFromDisk(MODEL_URL);
+        await faceapi.nets.ssdMobilenetv1.loadFromDisk(MODEL_URL);
+        const img = await canvas.loadImage(file.path);
+
+        const detections = await faceapi
+          .detectSingleFace(img as any)
+          .withFaceLandmarks()
+          .withFaceDescriptor();
+        if (!detections)
+          throw new BadRequestException('Not found any face in the picture');
+        image.faceDescriptors = detections.descriptor.toString();
+      }
+
       const student = await this.studentsService.findOne(studentId);
       image.student = student;
       image.type = type;
