@@ -260,7 +260,12 @@ export class RoomsService {
       });
       if (!room) throw new NotFoundException(`Room with id = ${id} not found`);
       if (updateRoomDto.subjectId) {
-        if (updateRoomDto.subjectId != room.subject.id) {
+        if (!room.subject) {
+          const subject = await this.subjectService.findOne(
+            updateRoomDto.subjectId,
+          );
+          room.subject = subject;
+        } else if (updateRoomDto.subjectId != room.subject.id) {
           const subject = await this.subjectService.findOne(
             updateRoomDto.subjectId,
           );

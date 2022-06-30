@@ -107,7 +107,7 @@ export class StudentsService {
             classCode: res['lop'],
             major: res['nganh'],
             educationLevel: res['mabac'],
-            gender: res['gioitinh'] == 'Nam' ? 1 : 0,
+            gender: res['gioitinh'] == 'Nam' ? true : false,
             email: `${res['masv']}@student.hcmus.edu.vn`,
           });
         });

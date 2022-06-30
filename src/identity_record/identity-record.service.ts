@@ -18,8 +18,10 @@ import { UserRole } from 'src/users/decorator/user.enum';
 import { Repository } from 'typeorm';
 import { CreateExtractDataDto } from './dto/create-extract-data.dto';
 import { CreateIdentityRecordDto } from './dto/create-identity-record.dto';
+import { StudentJoinRoomDto } from './dto/student-join-roomdto';
 import { ExtractData } from './entities/extract-data.entity';
 import { IdentityRecord } from './entities/indentity-record.entity';
+import { StudentJoinRoom } from './entities/student-join-room.entity';
 @Injectable()
 export class IdentityRecordService {
   constructor(
@@ -30,6 +32,8 @@ export class IdentityRecordService {
     private imageService: ImagesService,
     @InjectRepository(ExtractData)
     private extractRepository: Repository<ExtractData>,
+    @InjectRepository(StudentJoinRoom)
+    private studentJointRoomRepository: Repository<StudentJoinRoom>,
   ) {}
   async create(createRecordDto: CreateIdentityRecordDto) {
     try {
@@ -96,6 +100,7 @@ export class IdentityRecordService {
       record.cardImage = image;
       record.duration = new Date().getTime() - record.created_at.getTime();
       record.extractData = saveExtract;
+      if (!record.idStatus) record.failTimes = record.failTimes + 1;
       if (idStatus) record.accepted = true;
       return await this.recordRepository.save(record);
     } catch (error) {
@@ -244,6 +249,16 @@ export class IdentityRecordService {
             status: 'Not start yet',
           });
       });
+      //Kiểm tra đã vào phòng chưa
+      for (const record of results) {
+        const joinRoom = await this.studentJointRoomRepository.findOne({
+          where: { studentId: record.studentId, roomId: id },
+        });
+        if (joinRoom) {
+          record.joinedRoom = true;
+          record.joinedRoomTime = joinRoom.joinTime;
+        }
+      }
       return results;
     } catch (error) {
       console.log(error.message);
@@ -283,6 +298,26 @@ export class IdentityRecordService {
         }
       }
       return true;
+    } catch (error) {
+      throw error;
+    }
+  }
+  async studentJoinRoom(studentJoinRoom: StudentJoinRoomDto) {
+    try {
+      const { email, zoomRoomId } = studentJoinRoom;
+      const studentId = email.split('@')[0];
+      const room = await this.roomService.findOneWithCondition({
+        zoomId: zoomRoomId,
+      });
+      const existed = await this.studentJointRoomRepository.findOne({
+        where: { studentId, roomId: room.id },
+      });
+      if (!existed) {
+        const newStudentJoinRoom = new StudentJoinRoom();
+        newStudentJoinRoom.roomId = room.id;
+        newStudentJoinRoom.studentId = studentId;
+        return this.studentJointRoomRepository.save(newStudentJoinRoom);
+      }
     } catch (error) {
       throw error;
     }

@@ -120,7 +120,7 @@ export class RoomsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiBearerAuth('JWT-auth')
   @Put(':id')
-  update(@Param() id: number, @Body() updateRoomDto: UpdateRoomDto) {
+  update(@Param('id') id: number, @Body() updateRoomDto: UpdateRoomDto) {
     return this.roomsService.update(id, updateRoomDto);
   }
   @UseGuards(JwtAuthGuard, RolesGuard)

@@ -6,6 +6,7 @@ import {
   Put,
   Body,
   Delete,
+  Post,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
@@ -14,6 +15,7 @@ import { IdentityRecordService } from './identity-record.service';
 import { GetUser } from 'src/users/decorator/user.decorator';
 import { Roles } from 'src/auth/decorator/roles.decorator';
 import { UserRole } from 'src/users/decorator/user.enum';
+import { StudentJoinRoomDto } from './dto/student-join-roomdto';
 
 @ApiTags('identity-record')
 @Controller('identity-record')
@@ -83,5 +85,13 @@ export class IdentityRecordController {
   @Delete()
   delete(@Body() ids: string[]) {
     return this.recordService.deletes(ids);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @ApiBearerAuth('JWT-auth')
+  @Roles(UserRole.ADMIN, UserRole.PROCTOR)
+  @Post('student_join_room')
+  studentJoinRoom(@Body() studentJoinRoomDto: StudentJoinRoomDto) {
+    return this.recordService.studentJoinRoom(studentJoinRoomDto);
   }
 }
