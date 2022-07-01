@@ -71,6 +71,24 @@ export class AuthService {
     return null;
   }
 
+  async verifySession(user: any): Promise<any> {
+    try {
+      const student = await this.studentService.findOneWithNoError(
+        user.email.split('@')[0],
+      );
+      if (student) {
+        return {
+          ...user,
+          ...student,
+          role: UserRole.STUDENT,
+          studentId: user.studentId,
+        };
+      }
+    } catch (error) {
+      throw error;
+    }
+  }
+
   async login(user: any) {
     const payload = {
       email: user.email,
