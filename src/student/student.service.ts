@@ -97,8 +97,8 @@ export class StudentsService {
         temp.forEach((res) => {
           data.push({
             studentId: res['masv'],
-            firstName: res['hoten'].slice(0, res['hoten'].lastIndexOf(' ')),
-            lastName: res['hoten'].slice(res['hoten'].lastIndexOf(' ')),
+            firstName: res['hoten'].split(' ').slice(0, -1).join(' '),
+            lastName: res['hoten'].split(' ').slice(-1).join(' '),
             birthday: new Date(
               `${res['ngaysinh'].toString().split('/')[2]}/${
                 res['ngaysinh'].toString().split('/')[1]

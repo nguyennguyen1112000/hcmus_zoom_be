@@ -27,11 +27,11 @@ export class ZoomsService {
       'https://zoom.us/oauth/token?grant_type=authorization_code&code=' +
       code +
       '&redirect_uri=' +
-      process.env.REDIRECT_URL;
+      process.env.OAUTH_REDIRECT_URL;
 
     const headersRequest = {
       Authorization: `Basic ${Buffer.from(
-        process.env.CLIENT_ID + ':' + process.env.CLIENT_SECRET,
+        process.env.OAUTH_CLIENT_ID + ':' + process.env.OAUTH_CLIENT_SECRET,
       ).toString('base64')}`,
     };
 
