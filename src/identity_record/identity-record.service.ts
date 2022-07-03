@@ -250,15 +250,15 @@ export class IdentityRecordService {
           });
       });
       //Kiểm tra đã vào phòng chưa
-      for (const record of results) {
-        const joinRoom = await this.studentJointRoomRepository.findOne({
-          where: { studentId: record.studentId, roomId: id },
-        });
-        if (joinRoom) {
-          record.joinedRoom = true;
-          record.joinedRoomTime = joinRoom.joinTime;
-        }
-      }
+      // for (const record of results) {
+      //   const joinRoom = await this.studentJointRoomRepository.findOne({
+      //     where: { studentId: record.studentId, roomId: id },
+      //   });
+      //   if (joinRoom) {
+      //     record.joinedRoom = true;
+      //     record.joinedRoomTime = joinRoom.joinTime;
+      //   }
+      // }
       return results;
     } catch (error) {
       console.log(error.message);

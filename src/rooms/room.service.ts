@@ -355,7 +355,7 @@ export class RoomsService {
       if (room.checkInConfigType == CheckInCofigType.AUTOMATION) {
         if (
           room.checkInStartTime <= new Date() &&
-          room.checkInEndTime > new Date()
+          room.checkInEndTime >= new Date()
         )
           check = true;
       } else {
@@ -364,7 +364,7 @@ export class RoomsService {
             check = true;
           else if (
             room.checkInStartTime <= new Date() &&
-            room.checkInEndTime > new Date()
+            room.checkInEndTime >= new Date()
           )
             check = true;
         }

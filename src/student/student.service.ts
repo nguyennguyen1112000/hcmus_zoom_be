@@ -126,9 +126,14 @@ export class StudentsService {
       await queryRunner.connect();
       await queryRunner.startTransaction();
       for (let i = 0; i < list.length; i++) {
-        const student = new Student();
-        assignPartialsToThis(student, list[i]);
-        await queryRunner.manager.save(student);
+        const existStudent = await this.studentsRepository.findOne({
+          studentId: list[i].studentId,
+        });
+        if (!existStudent) {
+          const student = new Student();
+          assignPartialsToThis(student, list[i]);
+          await queryRunner.manager.save(student);
+        }
       }
       await queryRunner.commitTransaction();
     } catch (error) {

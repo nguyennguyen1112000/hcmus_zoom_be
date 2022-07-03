@@ -46,7 +46,7 @@ export class SubjectsService {
   }
 
   async findAll() {
-    return await this.subjectsRepository.find({relations: ['students']});
+    return await this.subjectsRepository.find({ relations: ['students'] });
   }
   async findOne(id: number) {
     return await this.subjectsRepository.findOne(id, {
@@ -145,13 +145,6 @@ export class SubjectsService {
             educationLevel: res['mabac'],
             examCode: res['makithi'],
             teacher: res['giangvien'],
-            startTime: res['giothi'],
-            examDate: new Date(
-              `${res['ngaythi'].toString().split('/')[2]}/${
-                res['ngaythi'].toString().split('/')[1]
-              }/${res['ngaythi'].toString().split('/')[0]}`,
-            ),
-            examTime: res['thoigianthi'],
             studentYear: res['khoa'],
           });
         });
@@ -188,9 +181,14 @@ export class SubjectsService {
       await queryRunner.connect();
       await queryRunner.startTransaction();
       for (let i = 0; i < list.length; i++) {
-        const subject = new Subject();
-        assignPartialsToThis(subject, list[i]);
-        await queryRunner.manager.save(subject);
+        const currentSubject = await this.subjectsRepository.findOne({
+          subjectCode: list[i].subjectCode,
+        });
+        if (!currentSubject) {
+          const subject = new Subject();
+          assignPartialsToThis(subject, list[i]);
+          await queryRunner.manager.save(subject);
+        }
       }
       await queryRunner.commitTransaction();
     } catch (error) {
