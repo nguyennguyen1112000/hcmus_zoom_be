@@ -72,6 +72,13 @@ export class ImageController {
   async getMyImages(@GetUser() user) {
     return this.imageService.getMyFaceImage(user.studentId);
   }
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @ApiBearerAuth('JWT-auth')
+  @Get('face/:studentId')
+  @Roles(UserRole.ADMIN, UserRole.PROCTOR)
+  async getFaceImages(@Param('studentId') studentId: string) {
+    return this.imageService.getMyFaceImage(studentId);
+  }
   @Get(':studentId')
   async getImages(@Param('studentId') studentId: number) {
     return this.imageService.getAll(studentId);
