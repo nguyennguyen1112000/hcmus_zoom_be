@@ -86,8 +86,10 @@ export class VerifyService {
     createRecordDto.faceStatus = verifiedStatus;
     createRecordDto.faceImage = imageResult;
     const lastedRecord = await this.identiyRecordService.findLastedOne();
-    if (lastedRecord && !verifiedStatus)
-      createRecordDto.failTimes = lastedRecord.failTimes + 1;
+    if (lastedRecord)
+      if (!verifiedStatus)
+        createRecordDto.failTimes = lastedRecord.failTimes + 1;
+      else createRecordDto.failTimes = lastedRecord.failTimes;
     const res = await this.identiyRecordService.create(createRecordDto);
     return res;
   }
@@ -226,12 +228,17 @@ export class VerifyService {
       if (fs.existsSync(file.path)) {
         fs.unlinkSync(file.path);
       }
-
+      const lastedRecord = await this.identiyRecordService.findLastedOne();
+      let failTimes = 0;
+      if (lastedRecord)
+        if (!check) failTimes = lastedRecord.failTimes + 1;
+        else failTimes = lastedRecord.failTimes;
       const record = await this.identiyRecordService.updateIDStatus(
         recordId,
         check,
         imageResult,
         extractDataDto,
+        failTimes,
       );
       return { record, errorMessages, extractFields };
     } catch (error) {

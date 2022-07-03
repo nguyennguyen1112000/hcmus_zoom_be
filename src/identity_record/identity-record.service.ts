@@ -87,6 +87,7 @@ export class IdentityRecordService {
     idStatus: boolean,
     image: ImageData,
     extractDataDto: CreateExtractDataDto,
+    failTimes: number,
   ) {
     try {
       const record = await this.recordRepository.findOne(id);
@@ -100,7 +101,7 @@ export class IdentityRecordService {
       record.cardImage = image;
       record.duration = new Date().getTime() - record.created_at.getTime();
       record.extractData = saveExtract;
-      if (!record.idStatus) record.failTimes = record.failTimes + 1;
+      record.failTimes = failTimes;
       if (idStatus) record.accepted = true;
       return await this.recordRepository.save(record);
     } catch (error) {
