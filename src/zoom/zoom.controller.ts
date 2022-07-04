@@ -31,8 +31,8 @@ export class ZoomsController {
   @ApiBearerAuth('JWT-auth')
   @Roles(UserRole.ADMIN)
   @Post('refresh_token')
-  refreshToken(@GetUser() user: any) {
-    return this.zoomsService.getRefreshToken(user);
+  refreshToken(@GetUser() user: any, @Body('isEmbedded') isEmbedded: boolean) {
+    return this.zoomsService.getRefreshToken(user, isEmbedded);
   }
   @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiBearerAuth('JWT-auth')

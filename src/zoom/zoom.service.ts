@@ -83,13 +83,21 @@ export class ZoomsService {
       },
     });
   }
-  async getRefreshToken(user: any) {
+  async getRefreshToken(user: any, isEmbedded: boolean) {
     const url = `https://zoom.us/oauth/token?refresh_token=${user.zoom_refresh_token}&grant_type=refresh_token`;
-    const headersRequest = {
-      Authorization: `Basic ${Buffer.from(
-        process.env.CLIENT_ID + ':' + process.env.CLIENT_SECRET,
-      ).toString('base64')}`,
-    };
+    let headersRequest = null;
+    if (isEmbedded) {
+      headersRequest = {
+        Authorization: `Basic ${Buffer.from(
+          process.env.CLIENT_ID + ':' + process.env.CLIENT_SECRET,
+        ).toString('base64')}`,
+      };
+    } else
+      headersRequest = {
+        Authorization: `Basic ${Buffer.from(
+          process.env.OAUTH_CLIENT_ID + ':' + process.env.OAUTH_CLIENT_SECRET,
+        ).toString('base64')}`,
+      };
 
     const response = await this.httpService
       .post(url, null, { headers: headersRequest })
